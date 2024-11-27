@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "373265416191",
+    "project_id": "hijos-de-fluttarkia",
+    "storage_bucket": "hijos-de-fluttarkia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373265416191:android:01ca33bc3dc9e2328b71ca",
+        "android_client_info": {
+          "package_name": "com.example.fluttarkia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCngQCPohzmnj3BMslR_dfk3P-6OHVD5xE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373265416191:android:f1be60df1af557518b71ca",
+        "android_client_info": {
+          "package_name": "com.example.fluttarkia.hijos_de_fluttarkia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCngQCPohzmnj3BMslR_dfk3P-6OHVD5xE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
