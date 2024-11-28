@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../LoginView.dart';
+
 class MyApp extends StatelessWidget{
   const MyApp({super.key});
 
@@ -7,8 +9,24 @@ class MyApp extends StatelessWidget{
   Widget build(BuildContext context) {
 
 
+    Map<String, Widget Function(BuildContext)> rutas = {
+      '/splashview':(context) =>   SplashView(),
+      '/loginview':(context) =>   LoginView(),
+      '/homeview':(context) =>   HomeView(),
+      '/registerview':(context) => RegisterView(),
+      //'/profileview': (context) => ProfileView()
+    };
+
+    MaterialApp app = MaterialApp(
+        title: " Hijos de Flutter",
+        routes: rutas,
+        initialRoute: '/splashview',
+        debugShowCheckedModeBanner: true
+    );
 
 
-    return Container(); //hey pequeña
+
+
+    return app; //hey pequeña
   }
 }
