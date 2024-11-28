@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../FbObjects/FbPerfil.dart';
 import 'package:hijos_de_fluttarkia/Singletone/DataHolder.dart';
 
-import 'CustomViews/VinylBoton.dart';
+import '../CustomViews/VinylBoton.dart';
 
 class LoginView extends StatefulWidget{
   const LoginView({super.key});
