@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../LoginView.dart';
+import '../Views/Splashview.dart';
 
 class MyApp extends StatelessWidget{
   const MyApp({super.key});
