@@ -2,8 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../FbObjects/FbPerfil.dart';
+import '../../FbObjects/FbPerfil.dart';
 import 'package:hijos_de_fluttarkia/Singletone/DataHolder.dart';
+
+import '../CustomViews/VinylBoton.dart';
 
 class LoginView extends StatefulWidget{
   const LoginView({super.key});
