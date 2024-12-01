@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../AdminClasses/FirebaseAdmin.dart';
 import '../FbObjects/FbPerfil.dart';
 import 'package:hijos_de_fluttarkia/Singletone/DataHolder.dart';
 
@@ -18,35 +19,8 @@ class _LoginViewState extends State<LoginView> {
 
   TextEditingController tecUser= TextEditingController();
   TextEditingController tecPass= TextEditingController();
-  final db = FirebaseFirestore.instance;
 
-  void clickLogin() async{
-    try{
-      final credential = await
-      FirebaseAuth.instance.signInWithEmailAndPassword(email: tecUser.text, password: tecPass.text);
-      final ref = db.collection("Perfiles").doc(FirebaseAuth.instance.currentUser!.uid).withConverter
-        (fromFirestore: FbPerfil.fromFirestore, toFirestore: (FbPerfil perfil, _)=> perfil.toFirestore());
 
-      final docSnap = await ref.get();
-      DataHolder().miPerfil=docSnap.data();
-
-      if(DataHolder().miPerfil!=null){
-        Navigator.of(context).pushNamed('/homeview');
-      }else{
-        Navigator.of(context).pushNamed('/profileview');
-      }
-    }on FirebaseAuthException catch (e){
-      if (e.code == 'user-not-found') {
-        print('No user found for that email.');
-      } else if (e.code == 'wrong-password') {
-        print('Wrong password provided for that user.');
-      }
-    }
-  }
-
-  void clickRegistrar(){
-    Navigator.of(context).pushNamed('/registerview');
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,12 +88,19 @@ class _LoginViewState extends State<LoginView> {
                     VinylBoton(
                       sTitulo: "Login",
                       color: Colors.brown,
-                      onBotonVinylPressed: clickLogin,
+                      onBotonVinylPressed: () async{
+                        await FirebaseAdmin().clickLogin(
+                          email: tecUser.text,
+                          password: tecPass.text,
+                          context: context
+
+                        );
+                    },
                     ),
                     VinylBoton(
                       sTitulo: "Registro",
                       color: Colors.brown,
-                      onBotonVinylPressed: clickRegistrar,
+                      onBotonVinylPressed: () {Navigator.of(context).pushNamed('/registerview');},
                     ),
                   ],
                 ),
