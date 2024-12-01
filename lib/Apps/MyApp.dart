@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../LoginView.dart';
+
+import '../Views/LoginView.dart';
+import '../Views/RegisterView.dart';
 import '../Views/Splashview.dart';
 
 class MyApp extends StatelessWidget{
@@ -13,7 +15,7 @@ class MyApp extends StatelessWidget{
     Map<String, Widget Function(BuildContext)> rutas = {
       '/splashview':(context) =>   SplashView(),
       '/loginview':(context) =>   LoginView(),
-      '/homeview':(context) =>   HomeView(),
+      //'/homeview':(context) =>   HomeView(),
       '/registerview':(context) => RegisterView(),
       //'/profileview': (context) => ProfileView()
     };
@@ -26,8 +28,6 @@ class MyApp extends StatelessWidget{
     );
 
 
-
-
-    return app; //hey pequeña
+    return Container(); //hey pequeña
   }
 }
