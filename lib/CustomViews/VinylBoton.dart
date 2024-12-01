@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/material.dart';
 
 class VinylBoton extends StatelessWidget{
@@ -12,13 +10,13 @@ class VinylBoton extends StatelessWidget{
   Function() onBotonVinylPressed;
 
   VinylBoton({super.key,this.color=Colors.black, this.sTitulo="Login",
-  this.sImagenBoton="https://cdn-icons-png.flaticon.com/256/13397/13397557.png",
-  this.dHeight=40, this.dWidth=120, required this.onBotonVinylPressed
+    this.sImagenBoton="https://cdn-icons-png.flaticon.com/256/13397/13397557.png",
+    this.dHeight=40, this.dWidth=120, required this.onBotonVinylPressed
   });
 
   @override
   Widget build(BuildContext context) {
-
+    // TODO: implement build
     return InkWell(
       onTap: (){onBotonVinylPressed();},
       child: Container(
@@ -27,20 +25,23 @@ class VinylBoton extends StatelessWidget{
         width: dWidth,
         child: Row(
           children: [
-            Image.network(sImagenBoton,
-            height: dHeight * 0.7, //Ajusta la altura relativa a dHeight del botón
-            width: dHeight * 0.7, // Ajusta el ancho de la imagen para mantener proporción
-            fit: BoxFit.contain, // Asegura que la imagen se ajuste sin desbordarse
-           ),
+            Image.network(
+              sImagenBoton,
+              height: dHeight * 0.7, // Ajusta la altura relativa a dHeight del botón
+              width: dHeight * 0.7,  // Ajusta el ancho de la imagen para mantener proporción
+              fit: BoxFit.contain,   // Asegura que la imagen se ajuste sin desbordarse
+            ),
             const SizedBox(width: 8.0), // Espacio entre imagen y texto
             Flexible(
               child: FittedBox(
-                fit: BoxFit.scaleDown, //Ajusta el texto si es necesario
-              )
-            )
+                fit: BoxFit.scaleDown, // Ajusta el texto si es necesario
+                child: Text(sTitulo, style: TextStyle(color: color),),
+              ),
+            ),
           ],
         ),
       ),
+
     );
   }
 
