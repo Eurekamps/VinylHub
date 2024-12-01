@@ -30,7 +30,7 @@ class FirebaseAdmin {
       print("UID del perfil: $uid");
 
       // Referencia al documento del perfil
-      final ref = FirebaseFirestore.instance.collection("Perfiles")
+      final ref = FirebaseFirestore.instance.collection("perfiles")
           .doc(uid)
           .withConverter(
         fromFirestore: FbPerfil.fromFirestore,

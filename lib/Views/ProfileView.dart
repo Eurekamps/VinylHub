@@ -137,9 +137,7 @@ class _ProfileViewState extends State<ProfileView> {
           height: MediaQuery.of(context).size.height,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: NetworkImage(
-                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQksq1TyensfSfSQSsImBkuKjMYoFeBLeit9g&s",
-              ),
+              image: AssetImage('assets/coleccion.jpeg'),
               fit: BoxFit.cover,
             ),
           ),

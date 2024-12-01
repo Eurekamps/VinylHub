@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 
+import '../Views/HomeView.dart';
 import '../Views/LoginView.dart';
+import '../Views/ProfileView.dart';
 import '../Views/RegisterView.dart';
 import '../Views/Splashview.dart';
 
@@ -15,9 +17,9 @@ class MyApp extends StatelessWidget{
     Map<String, Widget Function(BuildContext)> rutas = {
       '/splashview':(context) =>   SplashView(),
       '/loginview':(context) =>   LoginView(),
-      //'/homeview':(context) =>   HomeView(),
+      '/homeview':(context) =>   HomeView(),
       '/registerview':(context) => RegisterView(),
-      //'/profileview': (context) => ProfileView()
+      '/profileview': (context) => ProfileView()
     };
 
     MaterialApp app = MaterialApp(
