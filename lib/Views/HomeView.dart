@@ -1,5 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert'; // Para convertir la imagen a base64
+import 'dart:typed_data'; // Para trabajar con bytes de la imagen
 import '../FbObjects/FbPost.dart';
 import 'MiDrawer1.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,12 +15,11 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   int _selectedIndex = 0;
-  bool _isGridView = false; //controla si la vista es en grid o lista
+  bool _isGridView = false;
 
-  //funcion de tocar un item
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index; // Actualiza el índice seleccionado
+      _selectedIndex = index;
     });
   }
 
@@ -24,37 +27,91 @@ class _HomeViewState extends State<HomeView> {
   final TextEditingController _tituloController = TextEditingController();
   final TextEditingController _descripcionController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
-  final TextEditingController _imagenController = TextEditingController();
-  final TextEditingController _categoriaController = TextEditingController();
 
-  // Inserta nueva Post en la db
-  Future<void> _agregarPost() async {
-    String titulo = _tituloController.text;
-    String descripcion = _descripcionController.text;
-    int precio = _precioController.text as int;
-    String imagen = _imagenController.text;
-    String categoria = _categoriaController.text;
+  List<String> _imagenURLs = [];
+  List<String> _categoriasSeleccionadas = [];
+  final ImagePicker _picker = ImagePicker();
 
-    if (titulo.isNotEmpty && descripcion.isNotEmpty) {
-      FbPost nuevaPost = FbPost(
-        titulo: titulo,
-        descripcion: descripcion,
-        precio: precio,
-        imagenURLpost: imagen,
-        categoria: categoria,
-      );
-
-      await _firestore.collection('Posts').add(nuevaPost.toMap());
-      // Limpiar los campos después de agregar la Post
-      _tituloController.clear();
-      _descripcionController.clear();
-      _precioController.clear();
-      _imagenController.clear();
-      _categoriaController.clear();
+  Future<String?> _convertirImagenABase64(XFile imagen) async {
+    try {
+      final bytes = await imagen.readAsBytes();
+      return "data:image/jpeg;base64,${base64Encode(bytes)}";
+    } catch (e) {
+      print("Error al convertir imagen a base64: $e");
+      return null;
     }
   }
 
-  // Pantalla 1: Lista de Posts
+  Future<void> _seleccionarImagenDesdeGaleria() async {
+    final XFile? imagen = await _picker.pickImage(source: ImageSource.gallery);
+    if (imagen != null) {
+      final base64String = await _convertirImagenABase64(imagen);
+      if (base64String != null) {
+        setState(() {
+          _imagenURLs.add(base64String);
+        });
+      }
+    }
+  }
+
+  Future<void> _capturarImagenDesdeCamara() async {
+    final XFile? imagen = await _picker.pickImage(source: ImageSource.camera);
+    if (imagen != null) {
+      final base64String = await _convertirImagenABase64(imagen);
+      if (base64String != null) {
+        setState(() {
+          _imagenURLs.add(base64String);
+        });
+      }
+    }
+  }
+
+  void _eliminarImagen(int index) {
+    setState(() {
+      _imagenURLs.removeAt(index);
+    });
+  }
+
+  Future<void> _agregarPost() async {
+    String titulo = _tituloController.text.trim();
+    String descripcion = _descripcionController.text.trim();
+    int precio = int.tryParse(_precioController.text.trim()) ?? 0;
+
+    if (titulo.isEmpty || descripcion.isEmpty) {
+      print("Error: Título o descripción vacíos");
+      return;
+    }
+
+    if (_imagenURLs.isEmpty) {
+      print("Error: No se seleccionaron imágenes");
+      return;
+    }
+
+    if (_categoriasSeleccionadas.isEmpty) {
+      print("Error: No se seleccionaron categorías");
+      return;
+    }
+
+    FbPost nuevaPost = FbPost(
+      titulo: titulo,
+      descripcion: descripcion,
+      precio: precio,
+      imagenURLpost: _imagenURLs,
+      categoria: _categoriasSeleccionadas,
+    );
+
+    await _firestore.collection('Posts').add(nuevaPost.toMap());
+    print("Post creado: ${nuevaPost.toMap()}");
+
+    setState(() {
+      _tituloController.clear();
+      _descripcionController.clear();
+      _precioController.clear();
+      _imagenURLs.clear();
+      _categoriasSeleccionadas.clear();
+    });
+  }
+
   Widget _buildListScreen() {
     return StreamBuilder<QuerySnapshot>(
       stream: _firestore.collection('Posts').snapshots(),
@@ -63,22 +120,27 @@ class _HomeViewState extends State<HomeView> {
           return Center(child: CircularProgressIndicator());
         }
 
-        var Posts = snapshot.data!.docs.map((doc) {
+        var posts = snapshot.data!.docs.map((doc) {
           return FbPost.fromFirestore(doc);
         }).toList();
 
         return ListView.builder(
-          itemCount: Posts.length,
+          itemCount: posts.length,
           itemBuilder: (context, index) {
-            FbPost Post = Posts[index];
+            FbPost post = posts[index];
+
             return Card(
-              margin: const EdgeInsets.all(8),
+              margin: EdgeInsets.all(8),
               child: ListTile(
-                title: Text(Post.titulo),
-                subtitle: Text(Post.categoria),
-                onTap: () {
-                  // Acción al seleccionar una Post
-                },
+                title: Text(post.titulo),
+                subtitle: Text('Categorías: ${post.categoria.join(', ')}'),
+                trailing: post.imagenURLpost.isNotEmpty
+                    ? Image.memory(
+                  base64Decode(_limpiarBase64(post.imagenURLpost.first)),
+                  width: 50,
+                  height: 50,
+                )
+                    : null,
               ),
             );
           },
@@ -87,50 +149,14 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  // Pantalla 2: GridView de Posts
-  Widget _buildGridScreen() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: _firestore.collection('Posts').snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Center(child: CircularProgressIndicator());
-        }
-
-        var Posts = snapshot.data!.docs.map((doc) {
-          return FbPost.fromFirestore(doc);
-        }).toList();
-
-        return GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 8.0,
-            mainAxisSpacing: 8.0,
-          ),
-          itemCount: Posts.length,
-          itemBuilder: (context, index) {
-            FbPost Post = Posts[index];
-            return Card(
-              color: Colors.brown[200],
-              child: Center(
-                child: Text(Post.titulo, style: TextStyle(color: Colors.white)),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // Pantalla 3: Crear Post
-  Widget _buildCreateStoreScreen() {
+  Widget _buildCreatePostScreen() {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           TextField(
             controller: _tituloController,
-            decoration: InputDecoration(labelText: 'titulo de la Post'),
+            decoration: InputDecoration(labelText: 'Título del Post'),
           ),
           TextField(
             controller: _descripcionController,
@@ -138,16 +164,66 @@ class _HomeViewState extends State<HomeView> {
           ),
           TextField(
             controller: _precioController,
-            decoration: InputDecoration(labelText: 'Ubicación'),
+            decoration: InputDecoration(labelText: 'Precio'),
           ),
-          TextField(
-            controller: _imagenController,
-            decoration: InputDecoration(labelText: 'imageno'),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _seleccionarImagenDesdeGaleria,
+                icon: Icon(Icons.photo_library),
+                label: Text("Galería"),
+              ),
+              ElevatedButton.icon(
+                onPressed: _capturarImagenDesdeCamara,
+                icon: Icon(Icons.camera_alt),
+                label: Text("Cámara"),
+              ),
+            ],
           ),
-          TextField(
-            controller: _categoriaController,
-            decoration: InputDecoration(labelText: 'Categoría'),
+          SizedBox(height: 10),
+          if (_imagenURLs.isNotEmpty)
+            Wrap(
+              spacing: 8.0,
+              children: _imagenURLs.map((image) {
+                return Chip(
+                  label: Text('Imagen cargada'),
+                  onDeleted: () {
+                    _eliminarImagen(_imagenURLs.indexOf(image));
+                  },
+                );
+              }).toList(),
+            ),
+          DropdownButtonFormField<String>(
+            items: ['Categoría 1', 'Categoría 2', 'Categoría 3']
+                .map((categoria) => DropdownMenuItem(
+              value: categoria,
+              child: Text(categoria),
+            ))
+                .toList(),
+            onChanged: (value) {
+              if (value != null && !_categoriasSeleccionadas.contains(value)) {
+                setState(() {
+                  _categoriasSeleccionadas.add(value);
+                });
+              }
+            },
+            decoration: InputDecoration(labelText: 'Selecciona una categoría'),
           ),
+          Wrap(
+            children: _categoriasSeleccionadas
+                .map((categoria) => Chip(
+              label: Text(categoria),
+              onDeleted: () {
+                setState(() {
+                  _categoriasSeleccionadas.remove(categoria);
+                });
+              },
+            ))
+                .toList(),
+          ),
+          SizedBox(height: 10),
           ElevatedButton(
             onPressed: _agregarPost,
             child: Text('Crear Post'),
@@ -157,14 +233,14 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  void _cerrarSesion() async {
-    try {
-      await FirebaseAuth.instance.signOut(); // Cierra la sesión del usuario
-      // Redirige al usuario a la pantalla de login
-      Navigator.of(context).pushNamed('/loginview'); // Ejemplo de redirección
-    } catch (e) {
-      print("Error al cerrar sesión: $e");
+  String _limpiarBase64(String base64String) {
+    if (base64String.startsWith('data:image')) {
+      final index = base64String.indexOf('base64,');
+      if (index != -1) {
+        return base64String.substring(index + 7);
+      }
     }
+    return base64String;
   }
 
   @override
@@ -174,44 +250,20 @@ class _HomeViewState extends State<HomeView> {
         title: const Text("Mi App"),
         backgroundColor: Colors.brown,
         actions: [
-          // Botón de cerrar sesión
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: _cerrarSesion, // Llama a la función _cerrarSesion
-          ),
-          // Botón de notificaciones
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {}, // Acción del botón de notificaciones
-          ),
-          // Botón de cambiar vista
-          PopupMenuButton<int>(
-            onSelected: (int value) {
-              if (value == 1) {
-                setState(() {
-                  _isGridView = !_isGridView; // Alterna entre lista y grid
-                });
-              }
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.of(context).pushNamed('/loginview');
             },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
-              const PopupMenuItem<int>(
-                value: 1,
-                child: Text('Cambiar Vista'),
-              ),
-            ],
           ),
-          SizedBox(width: 20), // Espaciado entre los botones
         ],
       ),
-      drawer: MiDrawer1(), // El drawer ya no necesita la función onCerrarSesion
-      body: _selectedIndex == 0
-          ? (_isGridView ? _buildGridScreen() : _buildListScreen()) // Cambia entre lista y grid
-          : _selectedIndex == 1
-          ? _buildCreateStoreScreen() // Pantalla para crear una nueva Post
-          : Container(), // Placeholder para otras vistas
+      drawer: MiDrawer1(),
+      body: _selectedIndex == 0 ? _buildListScreen() : _buildCreatePostScreen(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: _onItemTapped, // Llamada a la función _onItemTapped
+        onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -220,10 +272,6 @@ class _HomeViewState extends State<HomeView> {
           BottomNavigationBarItem(
             icon: Icon(Icons.add_business),
             label: 'Crear Post',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favoritos',
           ),
         ],
       ),
