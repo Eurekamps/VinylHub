@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // Para convertir la imagen a base64
 import 'dart:typed_data'; // Para trabajar con bytes de la imagen
 import '../FbObjects/FbPost.dart';
+import '../Singletone/DataHolder.dart';
 import 'MiDrawer1.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -14,14 +16,6 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  int _selectedIndex = 0;
-  bool _isGridView = false;
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _tituloController = TextEditingController();
@@ -31,6 +25,51 @@ class _HomeViewState extends State<HomeView> {
   List<String> _imagenURLs = [];
   List<String> _categoriasSeleccionadas = [];
   final ImagePicker _picker = ImagePicker();
+
+  int _selectedIndex = 0;
+  bool _isGridView = false;
+  List<FbChat> arChats = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData(); // Carga los datos cuando se inicializa el estado
+  }
+
+  void _loadData() async {
+    List<FbChat> arTemp = await DataHolder().descargarTodosChats();
+    setState(() {
+      arChats.clear();
+      arChats.addAll(arTemp);
+    });
+  }
+
+  Widget? _chatItemBuilder(BuildContext contexto, int indice) {
+    return GestureDetector(
+      onTap: () {
+        DataHolder().fbChatSelected = arChats[indice];
+        Navigator.of(contexto).pushNamed('/chatsview');
+      },
+      child: Container(
+        width: 250,
+        child: Row(
+          children: [
+            Text(
+              "${arChats[indice].sTitulo}",
+              maxLines: 3,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   Future<String?> _convertirImagenABase64(XFile imagen) async {
     try {
@@ -166,6 +205,35 @@ class _HomeViewState extends State<HomeView> {
             controller: _precioController,
             decoration: InputDecoration(labelText: 'Precio'),
           ),
+
+          DropdownButtonFormField<String>(
+            items: ['Rock', 'Pop', 'R&B','Hip-Hop', 'Soul', 'Clásica','Heavy Metal', 'Jazz', 'Neo Soul']
+                .map((categoria) => DropdownMenuItem(
+              value: categoria,
+              child: Text(categoria),
+            ))
+                .toList(),
+            onChanged: (value) {
+              if (value != null && !_categoriasSeleccionadas.contains(value)) {
+                setState(() {
+                  _categoriasSeleccionadas.add(value);
+                });
+              }
+            },
+            decoration: InputDecoration(labelText: 'Selecciona una categoría'),
+          ),
+          Wrap(
+            children: _categoriasSeleccionadas
+                .map((categoria) => Chip(
+              label: Text(categoria),
+              onDeleted: () {
+                setState(() {
+                  _categoriasSeleccionadas.remove(categoria);
+                });
+              },
+            ))
+                .toList(),
+          ),
           SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -195,40 +263,33 @@ class _HomeViewState extends State<HomeView> {
                 );
               }).toList(),
             ),
-          DropdownButtonFormField<String>(
-            items: ['Categoría 1', 'Categoría 2', 'Categoría 3']
-                .map((categoria) => DropdownMenuItem(
-              value: categoria,
-              child: Text(categoria),
-            ))
-                .toList(),
-            onChanged: (value) {
-              if (value != null && !_categoriasSeleccionadas.contains(value)) {
-                setState(() {
-                  _categoriasSeleccionadas.add(value);
-                });
-              }
-            },
-            decoration: InputDecoration(labelText: 'Selecciona una categoría'),
-          ),
-          Wrap(
-            children: _categoriasSeleccionadas
-                .map((categoria) => Chip(
-              label: Text(categoria),
-              onDeleted: () {
-                setState(() {
-                  _categoriasSeleccionadas.remove(categoria);
-                });
-              },
-            ))
-                .toList(),
-          ),
           SizedBox(height: 10),
           ElevatedButton(
             onPressed: _agregarPost,
             child: Text('Crear Post'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPantallaChats() {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Chats"),
+        automaticallyImplyLeading: false,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 100),
+        child: SizedBox(
+          height: 450,
+          child: arChats.isEmpty
+              ? Center(child: CircularProgressIndicator()) // Muestra un indicador de carga mientras se obtienen los datos
+              : ListView.builder(
+            itemBuilder: _chatItemBuilder,
+            itemCount: arChats.length,
+          ),
+        ),
       ),
     );
   }
@@ -260,7 +321,10 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
       drawer: MiDrawer1(),
-      body: _selectedIndex == 0 ? _buildListScreen() : _buildCreatePostScreen(),
+      body: _selectedIndex == 0 ? _buildListScreen() :
+          _selectedIndex==1 ?
+          _buildCreatePostScreen() :
+          _buildPantallaChats(),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -273,6 +337,11 @@ class _HomeViewState extends State<HomeView> {
             icon: Icon(Icons.add_business),
             label: 'Crear Post',
           ),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.chat),
+              label: 'Chats',
+          ),
+
         ],
       ),
     );
