@@ -27,7 +27,7 @@ class _HomeViewState extends State<HomeView> {
   final ImagePicker _picker = ImagePicker();
 
   int _selectedIndex = 0;
-  bool _isGridView = false;
+  bool _isGridView = true;
   List<FbChat> arChats = [];
 
   @override
@@ -176,14 +176,103 @@ class _HomeViewState extends State<HomeView> {
                 trailing: post.imagenURLpost.isNotEmpty
                     ? Image.memory(
                   base64Decode(_limpiarBase64(post.imagenURLpost.first)),
-                  width: 50,
-                  height: 50,
+                  width: 150,
+                  height: 150,
                 )
                     : null,
               ),
             );
           },
         );
+      },
+    );
+  }
+
+  Widget _buildGridScreen() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore.collection('Posts').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        var posts = snapshot.data!.docs.map((doc) {
+          return FbPost.fromFirestore(doc);
+        }).toList();
+
+        return GridView.builder(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 8.0,
+            mainAxisSpacing: 8.0,
+            childAspectRatio: 0.8, // Ajusta la proporción para tarjetas verticales
+          ),
+          itemCount: posts.length,
+          itemBuilder: (context, index) {
+            FbPost post = posts[index];
+            return Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10), // Bordes redondeados
+              ),
+              elevation: 4, // Sombra para diseño más llamativo
+              child: Padding(
+                padding: const EdgeInsets.all(8.0), // Espaciado interno
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center, // Centrar contenido horizontalmente
+                  children: [
+                    if (post.imagenURLpost.isNotEmpty)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10), // Redondea la imagen
+                        child: AspectRatio(
+                          aspectRatio: 1.5, // Relación de aspecto fija (ancho/alto)
+                          child: Image.memory(
+                            base64Decode(_limpiarBase64(post.imagenURLpost.first)),
+                            fit: BoxFit.contain, // Muestra toda la imagen dentro del área sin recortarla
+                          ),
+                        ),
+                      )
+                    else
+                      AspectRatio(
+                        aspectRatio: 1.5, // Relación de aspecto para imágenes no disponibles
+                        child: Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            size: 50,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ),
+                    SizedBox(height: 8), // Espaciado entre la imagen y el título
+                    Text(
+                      post.titulo,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 4), // Espaciado entre el título y la categoría
+                    Text(
+                      'Categorías: ${post.categoria.join(', ')}',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 4,),
+                    Text(
+                      'Precio: ${post.precio.toString()} €',
+                      style: TextStyle(fontSize: 14),
+                    )
+
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+
       },
     );
   }
@@ -318,10 +407,26 @@ class _HomeViewState extends State<HomeView> {
               Navigator.of(context).pushNamed('/loginview');
             },
           ),
+          PopupMenuButton<int>(
+            onSelected: (int value) {
+              if (value == 1) {
+                setState(() {
+                  _isGridView = !_isGridView; // Alterna entre lista y grid
+                });
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+              const PopupMenuItem<int>(
+                value: 1,
+                child: Text('Cambiar Vista'),
+              ),
+            ],
+          ),
+          SizedBox(width: 20,)
         ],
       ),
       drawer: MiDrawer1(),
-      body: _selectedIndex == 0 ? _buildListScreen() :
+      body: _selectedIndex == 0 ? (_isGridView ? _buildGridScreen() : _buildListScreen())  :
           _selectedIndex==1 ?
           _buildCreatePostScreen() :
           _buildPantallaChats(),
