@@ -5,6 +5,7 @@ import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
 import 'package:hijos_de_fluttarkia/Singletone/PlatformAdmin.dart';
 
 import '../FbObjects/FbPerfil.dart';
+import '../FbObjects/FbPost.dart';
 
 class DataHolder {
 
@@ -14,6 +15,9 @@ class DataHolder {
   FbPerfil? miPerfil;
   FbChat? fbChatSelected;
   PlatformAdmin? platformAdmin;
+  FbPost? fbPostSelected;
+  List<FbPost> arPosts=[];
+
 
 
   DataHolder._internal();

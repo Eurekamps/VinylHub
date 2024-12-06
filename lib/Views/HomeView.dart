@@ -29,6 +29,7 @@ class _HomeViewState extends State<HomeView> {
   int _selectedIndex = 0;
   bool _isGridView = true;
   List<FbChat> arChats = [];
+  bool blListaPostsVisible = true;
 
   @override
   void initState() {
@@ -151,6 +152,15 @@ class _HomeViewState extends State<HomeView> {
     });
   }
 
+  //función en la que se le pasa el contexto y unobjeto fbpost para usarlo para navegar a postdetails
+  void onPostItem_MasDatosClicked(BuildContext context, FbPost postSeleccionado){
+    DataHolder().fbPostSelected=postSeleccionado;
+    Navigator.of(context).pushNamed('/postdetails');
+    setState(() {
+      blListaPostsVisible=false;
+    });
+  }
+
   Widget _buildListScreen() {
     return StreamBuilder<QuerySnapshot>(
       stream: _firestore.collection('Posts').snapshots(),
@@ -168,20 +178,25 @@ class _HomeViewState extends State<HomeView> {
           itemBuilder: (context, index) {
             FbPost post = posts[index];
 
-            return Card(
-              margin: EdgeInsets.all(8),
-              child: ListTile(
-                title: Text(post.titulo),
-                subtitle: Text('Categorías: ${post.categoria.join(', ')}'),
-                trailing: post.imagenURLpost.isNotEmpty
-                    ? Image.memory(
-                  base64Decode(_limpiarBase64(post.imagenURLpost.first)),
-                  width: 150,
-                  height: 150,
-                )
-                    : null,
-              ),
-            );
+            return
+              GestureDetector(
+                onTap: (){onPostItem_MasDatosClicked(context, post);},
+                child:
+                  Card(
+                    margin: EdgeInsets.all(8),
+                    child: ListTile(
+                      title: Text(post.titulo),
+                      subtitle: Text('Categorías: ${post.categoria.join(', ')}'),
+                      trailing: post.imagenURLpost.isNotEmpty
+                          ? Image.memory(
+                        base64Decode(_limpiarBase64(post.imagenURLpost.first)),
+                        width: 150,
+                        height: 150,
+                      )
+                          : null,
+                    ),
+                  ),
+              );
           },
         );
       },
@@ -210,65 +225,70 @@ class _HomeViewState extends State<HomeView> {
           itemCount: posts.length,
           itemBuilder: (context, index) {
             FbPost post = posts[index];
-            return Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10), // Bordes redondeados
-              ),
-              elevation: 4, // Sombra para diseño más llamativo
-              child: Padding(
-                padding: const EdgeInsets.all(8.0), // Espaciado interno
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center, // Centrar contenido horizontalmente
-                  children: [
-                    if (post.imagenURLpost.isNotEmpty)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10), // Redondea la imagen
-                        child: AspectRatio(
-                          aspectRatio: 1.5, // Relación de aspecto fija (ancho/alto)
-                          child: Image.memory(
-                            base64Decode(_limpiarBase64(post.imagenURLpost.first)),
-                            fit: BoxFit.contain, // Muestra toda la imagen dentro del área sin recortarla
+            return
+            GestureDetector(
+              onTap: (){onPostItem_MasDatosClicked(context, post);},
+              child:
+                Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10), // Bordes redondeados
+                  ),
+                  elevation: 4, // Sombra para diseño más llamativo
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0), // Espaciado interno
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center, // Centrar contenido horizontalmente
+                      children: [
+                        if (post.imagenURLpost.isNotEmpty)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10), // Redondea la imagen
+                            child: AspectRatio(
+                              aspectRatio: 1.5, // Relación de aspecto fija (ancho/alto)
+                              child: Image.memory(
+                                base64Decode(_limpiarBase64(post.imagenURLpost.first)),
+                                fit: BoxFit.contain, // Muestra toda la imagen dentro del área sin recortarla
+                              ),
+                            ),
+                          )
+                        else
+                          AspectRatio(
+                            aspectRatio: 1.5, // Relación de aspecto para imágenes no disponibles
+                            child: Center(
+                              child: Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ),
-                        ),
-                      )
-                    else
-                      AspectRatio(
-                        aspectRatio: 1.5, // Relación de aspecto para imágenes no disponibles
-                        child: Center(
-                          child: Icon(
-                            Icons.image_not_supported,
-                            size: 50,
-                            color: Colors.grey,
+                        SizedBox(height: 8), // Espaciado entre la imagen y el título
+                        Text(
+                          post.titulo,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    SizedBox(height: 8), // Espaciado entre la imagen y el título
-                    Text(
-                      post.titulo,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 4), // Espaciado entre el título y la categoría
-                    Text(
-                      'Categorías: ${post.categoria.join(', ')}',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 4,),
-                    Text(
-                      'Precio: ${post.precio.toString()} €',
-                      style: TextStyle(fontSize: 14),
-                    )
+                        SizedBox(height: 4), // Espaciado entre el título y la categoría
+                        Text(
+                          'Categorías: ${post.categoria.join(', ')}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 4,),
+                        Text(
+                          'Precio: ${post.precio.toString()} €',
+                          style: TextStyle(fontSize: 14),
+                        )
 
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
-              ),
             );
           },
         );
@@ -397,8 +417,8 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Mi App"),
-        backgroundColor: Colors.brown,
+        title: const Text("VinylHub"),
+        backgroundColor: Colors.black54,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -439,7 +459,7 @@ class _HomeViewState extends State<HomeView> {
             label: 'Inicio',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_business),
+            icon: Icon(Icons.post_add),
             label: 'Crear Post',
           ),
           BottomNavigationBarItem(

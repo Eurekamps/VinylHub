@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hijos_de_fluttarkia/Views/ChatView.dart';
+import 'package:hijos_de_fluttarkia/Views/PostDetails.dart';
 
 
 import '../Views/HomeView.dart';
@@ -21,7 +22,8 @@ class MyApp extends StatelessWidget{
       '/homeview':(context) =>   HomeView(),
       '/registerview':(context) => RegisterView(),
       '/profileview': (context) => ProfileView(),
-      '/chatview': (context) => ChatView()
+      '/chatview': (context) => ChatView(),
+      '/postdetails': (context) => PostDetails(onClose: () {  },)
     };
 
     MaterialApp app = MaterialApp(
