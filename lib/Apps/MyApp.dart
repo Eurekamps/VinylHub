@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hijos_de_fluttarkia/Views/ChatView.dart';
 
 
 import '../Views/HomeView.dart';
@@ -19,7 +20,8 @@ class MyApp extends StatelessWidget{
       '/loginview':(context) =>   LoginView(),
       '/homeview':(context) =>   HomeView(),
       '/registerview':(context) => RegisterView(),
-      '/profileview': (context) => ProfileView()
+      '/profileview': (context) => ProfileView(),
+      '/chatview': (context) => ChatView()
     };
 
     MaterialApp app = MaterialApp(

@@ -1,5 +1,8 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
+import 'package:hijos_de_fluttarkia/Singletone/PlatformAdmin.dart';
 
 import '../FbObjects/FbPerfil.dart';
 
@@ -10,6 +13,7 @@ class DataHolder {
 
   FbPerfil? miPerfil;
   FbChat? fbChatSelected;
+  PlatformAdmin? platformAdmin;
 
 
   DataHolder._internal();
@@ -17,6 +21,11 @@ class DataHolder {
   factory DataHolder(){
     return _instance;
   }
+
+  void initPlatformAdmin(BuildContext context){
+    platformAdmin = PlatformAdmin(context: context);
+  }
+
 
   Future<List<FbChat>> descargarTodosChats() async{
     List<FbChat> arTemp=[];

@@ -48,7 +48,7 @@ class _HomeViewState extends State<HomeView> {
     return GestureDetector(
       onTap: () {
         DataHolder().fbChatSelected = arChats[indice];
-        Navigator.of(contexto).pushNamed('/chatsview');
+        Navigator.of(contexto).pushNamed('/chatview');
       },
       child: Container(
         width: 250,
