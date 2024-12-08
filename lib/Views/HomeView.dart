@@ -388,20 +388,52 @@ class _HomeViewState extends State<HomeView> {
         title: Text("Chats"),
         automaticallyImplyLeading: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 100),
-        child: SizedBox(
-          height: 450,
-          child: arChats.isEmpty
-              ? Center(child: CircularProgressIndicator()) // Muestra un indicador de carga mientras se obtienen los datos
-              : ListView.builder(
-            itemBuilder: _chatItemBuilder,
-            itemCount: arChats.length,
-          ),
-        ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('Chats').snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          // Convierte los documentos en una lista de objetos FbChat
+          List<FbChat> chats = snapshot.data!.docs.map((doc) {
+            return FbChat.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>, null);
+          }).toList();
+
+          if (chats.isEmpty) {
+            return Center(child: Text("No hay chats disponibles."));
+          }
+
+          return ListView.builder(
+            itemCount: chats.length,
+            itemBuilder: (context, index) {
+              FbChat chat = chats[index];
+              return GestureDetector(
+                onTap: () {
+                  DataHolder().fbChatSelected = chat;
+                  Navigator.of(context).pushNamed('/chatview');
+                },
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          chat.sTitulo,
+                          style: TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
+
 
   String _limpiarBase64(String base64String) {
     if (base64String.startsWith('data:image')) {

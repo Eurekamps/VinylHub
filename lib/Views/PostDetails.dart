@@ -1,7 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
 
 import '../Singletone/DataHolder.dart';
+import 'ChatView.dart';
 
 class PostDetails extends StatefulWidget{
 
@@ -16,6 +20,7 @@ class PostDetails extends StatefulWidget{
 class _PostDetailsState extends State<PostDetails> {
   int currentIndex = 0; // Índice de la imagen actual
   late PageController _pageController;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -53,6 +58,34 @@ class _PostDetailsState extends State<PostDetails> {
         curve: Curves.easeInOut,
       );
     }
+  }
+
+  void crearNuevoChat() async{
+    String uid = FirebaseFirestore.instance.collection('Chats').doc().id;
+    String titulo = DataHolder().fbPostSelected!.titulo;
+    String imagenChat = DataHolder().fbPostSelected!.imagenURLpost[0];
+    String autorUid=FirebaseAuth.instance.currentUser!.uid;
+
+    FbChat nuevoChat = FbChat(
+      uid: uid,
+      sTitulo: titulo,
+      sImagenURL: imagenChat,
+      sAutorUid: autorUid,
+      tmCreacion: Timestamp.now()
+    );
+
+    await _firestore.collection('Chats').doc(uid).set(nuevoChat.toFirestore());
+    print("Chat creado: ${nuevoChat.toFirestore()}");
+
+    String rutaChatNuevo= "/Chats/"+uid+"/mensajes";
+
+    DataHolder().fbChatSelected = nuevoChat;
+
+    // Navega a la pantalla del chat directamente
+    Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => ChatView()));
+
+
   }
 
   @override
@@ -131,6 +164,13 @@ class _PostDetailsState extends State<PostDetails> {
                 style: TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
+              SizedBox(height: 16,),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                ElevatedButton.icon(onPressed: crearNuevoChat,icon: const Icon(Icons.chat), label: Text("Chat"),)
+                ],
+              )
             ],
           ),
         ),

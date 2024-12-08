@@ -19,6 +19,7 @@ class _ChatViewState extends State<ChatView> {
   var db = FirebaseFirestore.instance;
   String sRutaChatMensajes="/Chats/"+DataHolder().fbChatSelected!.uid+"/mensajes";
 
+
   @override
   void initState() {
     // TODO: implement initState
@@ -65,6 +66,7 @@ class _ChatViewState extends State<ChatView> {
   }
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
         appBar: AppBar(title: Text("Chat ${DataHolder().fbChatSelected!.sTitulo}"),),
 
