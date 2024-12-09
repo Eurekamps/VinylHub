@@ -60,33 +60,46 @@ class _PostDetailsState extends State<PostDetails> {
     }
   }
 
-  void crearNuevoChat() async{
-    String uid = FirebaseFirestore.instance.collection('Chats').doc().id;
-    String titulo = DataHolder().fbPostSelected!.titulo;
-    String imagenChat = DataHolder().fbPostSelected!.imagenURLpost[0];
-    String autorUid=FirebaseAuth.instance.currentUser!.uid;
+  void crearNuevoChat() async {
+    String? uidPost = DataHolder().fbPostSelected!.uid;
+    var chatQuery = await _firestore
+        .collection('Chats')
+        .where('uidPost', isEqualTo: uidPost)
+        .limit(1)
+        .get();
 
-    FbChat nuevoChat = FbChat(
-      uid: uid,
-      sTitulo: titulo,
-      sImagenURL: imagenChat,
-      sAutorUid: autorUid,
-      tmCreacion: Timestamp.now()
-    );
+    if (chatQuery.docs.isNotEmpty) { //si esxiste el chat, actualiza el fbchatselected
+      var chatDoc = chatQuery.docs.first;
+      DataHolder().fbChatSelected = FbChat.fromFirestore(chatDoc, null);
 
-    await _firestore.collection('Chats').doc(uid).set(nuevoChat.toFirestore());
-    print("Chat creado: ${nuevoChat.toFirestore()}");
+      Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => ChatView()));
+    } else {
+      //Si ese chat no existe, creara uno nuevo
+      String uid = FirebaseFirestore.instance.collection('Chats').doc().id;
+      String titulo = DataHolder().fbPostSelected!.titulo;
+      String imagenChat = DataHolder().fbPostSelected!.imagenURLpost[0];
+      String autorUid = FirebaseAuth.instance.currentUser!.uid;
 
-    String rutaChatNuevo= "/Chats/"+uid+"/mensajes";
+      FbChat nuevoChat = FbChat(
+        uid: uid,
+        sTitulo: titulo,
+        sImagenURL: imagenChat,
+        sAutorUid: autorUid,
+        tmCreacion: Timestamp.now(),
+        uidPost: uidPost,
+      );
 
-    DataHolder().fbChatSelected = nuevoChat;
+      //insert db
+      await _firestore.collection('Chats').doc(uid).set(nuevoChat.toFirestore());
+      print("Chat creado: ${nuevoChat.toFirestore()}");
 
-    // Navega a la pantalla del chat directamente
-    Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => ChatView()));
-
-
+      DataHolder().fbChatSelected = nuevoChat;
+      Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => ChatView()));
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {

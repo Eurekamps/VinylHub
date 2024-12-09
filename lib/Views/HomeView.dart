@@ -116,6 +116,7 @@ class _HomeViewState extends State<HomeView> {
     String titulo = _tituloController.text.trim();
     String descripcion = _descripcionController.text.trim();
     int precio = int.tryParse(_precioController.text.trim()) ?? 0;
+    String uid = FirebaseFirestore.instance.collection('Posts').doc().id;
 
     if (titulo.isEmpty || descripcion.isEmpty) {
       print("Error: Título o descripción vacíos");
@@ -138,6 +139,7 @@ class _HomeViewState extends State<HomeView> {
       precio: precio,
       imagenURLpost: _imagenURLs,
       categoria: _categoriasSeleccionadas,
+      uid: uid
     );
 
     await _firestore.collection('Posts').add(nuevaPost.toMap());

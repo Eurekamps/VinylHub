@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hijos_de_fluttarkia/Singletone/DataHolder.dart';
 
 class FbChat{
   String uid;
@@ -6,13 +7,15 @@ class FbChat{
   String sAutorUid;
   String sImagenURL;
   Timestamp tmCreacion;
+  String uidPost;
 
   FbChat({
     required this.uid,
     required this.sTitulo,
     required this.sAutorUid,
     required this.sImagenURL,
-    required this.tmCreacion
+    required this.tmCreacion,
+    required this.uidPost
 
   });
 
@@ -25,7 +28,8 @@ class FbChat{
         sAutorUid: data?['sAutorUid']!= null ? data!['sAutorUid']:"",
         sImagenURL: data?['sImagenURL']!= null ? data!['sImagenURL']:"",
         tmCreacion:data?['tmCreacion']!= null ? data!['tmCreacion']:Timestamp.now(),
-        uid: snapshot.id
+        uid: snapshot.id,
+        uidPost: DataHolder().fbPostSelected!.uid
     );
   }
 
@@ -35,6 +39,8 @@ class FbChat{
       "sImgUrl": sImagenURL,
       "sUidAutor":sAutorUid,
       "tmCreacion":tmCreacion,
+      "uid":uid,
+      "uidPost":uidPost
     };
   }
 }
