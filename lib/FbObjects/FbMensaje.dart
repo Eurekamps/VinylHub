@@ -24,7 +24,7 @@ class FbMensaje{
     return FbMensaje(
       sCuerpo: data?['sCuerpo']!= null ? data!['sCuerpo']:"",
       sImgUrl: data?['sImgUrl']!= null ? data!['sImgUrl']:"",
-      sAutorUid: FirebaseAuth.instance.currentUser!.uid,
+      sAutorUid: data?['sAutorUid'] ?? "",
       tmCreacion:data?['tmCreacion']!= null ? data!['tmCreacion']:Timestamp.now(),
     );
   }

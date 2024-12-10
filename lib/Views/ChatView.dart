@@ -33,24 +33,21 @@ class _ChatViewState extends State<ChatView> {
   }
 
 
-  Future<void> descargarTodosMensajes() async{
-    List<FbMensaje> arTemp=[];
-    arTemp.clear();
-
-
+  Future<void> descargarTodosMensajes() async {
+    List<FbMensaje> arTemp = [];
     final ref = db.collection(sRutaChatMensajes)
-        .orderBy("tmCreacion",descending: true)
-    //.limit(30)
+        .orderBy("tmCreacion", descending: true)
         .withConverter(
       fromFirestore: FbMensaje.fromFirestore,
-      toFirestore: (FbMensaje post, _) => post.toFirestore(),
+      toFirestore: (FbMensaje mensaje, _) => mensaje.toFirestore(),
     );
-    //final querySnap = await ref.get();
 
     ref.snapshots().listen((event) {
       arTemp.clear();
       for (var doc in event.docs) {
-        arTemp.add(doc.data());
+        final mensaje = doc.data();
+        print("Mensaje cargado: ${mensaje.sCuerpo}, Autor: ${mensaje.sAutorUid}");
+        arTemp.add(mensaje);
       }
 
       arTemp.sort(compararArray);
@@ -60,10 +57,8 @@ class _ChatViewState extends State<ChatView> {
         arFbMensajes.addAll(arTemp);
       });
     });
-
-
-
   }
+
 
   void presionarEnvio() async{
     FbMensaje nuevoMensaje=FbMensaje(
@@ -79,9 +74,15 @@ class _ChatViewState extends State<ChatView> {
 
   bool esMensajePropio(FbMensaje mensaje) {
     final String? uidUsuarioActual = FirebaseAuth.instance.currentUser?.uid;
-    if (uidUsuarioActual == null) return false; // En caso de que el usuario no esté autenticado
+    if (uidUsuarioActual == null) {
+      print("Error: Usuario no autenticado.");
+      return false;
+    }
+    print("UID Usuario actual: $uidUsuarioActual");
+    print("Autor mensaje: ${mensaje.sAutorUid}");
     return mensaje.sAutorUid == uidUsuarioActual;
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -97,19 +98,21 @@ class _ChatViewState extends State<ChatView> {
             child: ListView.builder(
               reverse: true, // Los mensajes recientes al final
               itemCount: arFbMensajes.length,
-              itemBuilder: (context, index) {
-                final mensaje = arFbMensajes[index];
-                final esPropio = esMensajePropio(mensaje);
+                itemBuilder: (context, index) {
+                  final mensaje = arFbMensajes[index];
+                  final esPropio = esMensajePropio(mensaje);
 
-                // Debug para confirmar valores
-                print("Mensaje: ${mensaje.sCuerpo}, Enviado por: ${mensaje.sAutorUid}, Propio: $esPropio");
+                  print("Mensaje: ${mensaje.sCuerpo}");
+                  print("Autor: ${mensaje.sAutorUid}");
+                  print("¿Es propio?: $esPropio");
 
-                return MessageBubble(
-                  content: mensaje.sCuerpo,
-                  isSender: esPropio,
-                  imageUrl: mensaje.sImgUrl.isNotEmpty ? mensaje.sImgUrl : null,
-                );
-              },
+                  return MessageBubble(
+                    content: mensaje.sCuerpo,
+                    isSender: esPropio,
+                    imageUrl: mensaje.sImgUrl.isNotEmpty ? mensaje.sImgUrl : null,
+                  );
+                }
+
             ),
           ),
 
