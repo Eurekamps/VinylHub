@@ -64,51 +64,77 @@ class _ChatViewState extends State<ChatView> {
 
 
   }
+
+  void presionarEnvio() async{
+    FbMensaje nuevoMensaje=FbMensaje(
+        sCuerpo: controller.text,
+        tmCreacion:Timestamp.now(),
+        sImgUrl: imgcontroller.text,
+        sAutorUid: FirebaseAuth.instance.currentUser!.uid
+    );
+    var nuevoDoc=await db.collection(sRutaChatMensajes).add(nuevoMensaje.toFirestore());
+    controller.clear();
+
+  }
+
+  bool esMensajePropio(FbMensaje mensaje) {
+    String uidUsuarioActual = FirebaseAuth.instance.currentUser!.uid;
+    return mensaje.sAutorUid == uidUsuarioActual;
+  }
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-        appBar: AppBar(title: Text("Chat ${DataHolder().fbChatSelected!.sTitulo}"),),
+      appBar: AppBar(
+        title: Text("Chat ${DataHolder().fbChatSelected!.sTitulo}"),
+        backgroundColor: Colors.teal,
+      ),
+      body: Column(
+        children: [
+          // Lista de mensajes
+          Expanded(
+            child: ListView.builder(
+              reverse: true, // Los mensajes recientes al final
+              itemCount: arFbMensajes.length,
+              itemBuilder: (context, index) {
+                final mensaje = arFbMensajes[index];
+                final esPropio = esMensajePropio(mensaje); // Usamos la función aquí
 
-        body:
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: DataHolder().platformAdmin!.getScreenWidth()*0.1),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-
-              Container(
-                color: Colors.amber,
-                width: DataHolder().platformAdmin!.getScreenWidth()*0.8,
-                height: DataHolder().platformAdmin!.getScreenHeight()*0.5,
-                child: ListView.builder(itemBuilder: mensajeBuilder,itemCount: arFbMensajes.length,),
-              ),
-              Container(
-                width: DataHolder().platformAdmin!.getScreenWidth()*0.8,
-                color: Colors.cyanAccent,
-                child: TextField(controller: imgcontroller,),
-              ),
-              Row(children: [
-                Container(
-                  width: DataHolder().platformAdmin!.getScreenWidth()*0.7,
-                  color: Colors.tealAccent,
+                return MessageBubble(
+                  content: mensaje.sCuerpo,
+                  isSender: esPropio,
+                  imageUrl: mensaje.sImgUrl.isNotEmpty ? mensaje.sImgUrl : null,
+                );
+              },
+            ),
+          ),
+          // Caja de texto para enviar mensajes
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
                   child: TextField(
                     controller: controller,
-                    style: TextStyle(fontSize: DataHolder().platformAdmin!.getScreenWidth()*0.05),
-
+                    decoration: InputDecoration(
+                      hintText: "Escribe un mensaje...",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                    ),
                   ),
                 ),
-                SizedBox(
-                  width: DataHolder().platformAdmin!.getScreenWidth()*0.1,
-                  child: IconButton(onPressed: presionarEnvio, icon: Icon(Icons.send)),
-                )
-
-              ],),
-            ],
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: presionarEnvio,
+                  icon: Icon(Icons.send, color: Colors.teal),
+                ),
+              ],
+            ),
           ),
-        )
-
-
+        ],
+      ),
     );
   }
 
@@ -129,14 +155,58 @@ class _ChatViewState extends State<ChatView> {
     //return Text("${arFbMensajes[indice].sCuerpo}");
   }
 
-  void presionarEnvio() async{
-    FbMensaje nuevoMensaje=FbMensaje(
-        sCuerpo: controller.text,
-        tmCreacion:Timestamp.now(),
-        sImgUrl: imgcontroller.text,
-        sAutorUid: FirebaseAuth.instance.currentUser!.uid
-    );
-    var nuevoDoc=await db.collection(sRutaChatMensajes).add(nuevoMensaje.toFirestore());
+}
 
+class MessageBubble extends StatelessWidget {
+  final String content;
+  final bool isSender;
+  final String? imageUrl;
+
+  const MessageBubble({
+    Key? key,
+    required this.content,
+    required this.isSender,
+    this.imageUrl,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final alignment =
+    isSender ? Alignment.centerRight : Alignment.centerLeft;
+    final color = isSender ? Colors.teal[100] : Colors.grey[300];
+    final textColor = isSender ? Colors.black : Colors.black87;
+
+    return Align(
+      alignment: alignment,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+            bottomLeft: isSender ? Radius.circular(15) : Radius.zero,
+            bottomRight: isSender ? Radius.zero : Radius.circular(15),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment:
+          isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            if (imageUrl != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Image.network(imageUrl!, width: 200, height: 150),
+              ),
+            Text(
+              content,
+              style: TextStyle(color: textColor),
+            ),
+          ],
+        ),
+      ),
+    );
   }
+
 }
