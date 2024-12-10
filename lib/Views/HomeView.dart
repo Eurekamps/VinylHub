@@ -139,7 +139,8 @@ class _HomeViewState extends State<HomeView> {
       precio: precio,
       imagenURLpost: _imagenURLs,
       categoria: _categoriasSeleccionadas,
-      uid: uid
+      uid: uid,
+      sAutorUid: FirebaseAuth.instance.currentUser!.uid
     );
 
     await _firestore.collection('Posts').add(nuevaPost.toMap());
@@ -410,27 +411,52 @@ class _HomeViewState extends State<HomeView> {
             itemCount: chats.length,
             itemBuilder: (context, index) {
               FbChat chat = chats[index];
-              return GestureDetector(
-                onTap: () {
-                  DataHolder().fbChatSelected = chat;
-                  Navigator.of(context).pushNamed('/chatview');
-                },
-                child: Container(
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          chat.sTitulo,
-                          style: TextStyle(fontSize: 16),
+              final String uidUsuarioActual = FirebaseAuth.instance.currentUser!.uid;
+
+              //depuracion
+              print("---- Depuración de chats ----");
+              print("Chat sTitulo: ${chat.sTitulo}");
+              print("Chat sAutorUid: ${chat.sAutorUid}");
+              print("Chat sPostAutorUid: ${chat.sPostAutorUid}");
+              print("UID Usuario Actual: $uidUsuarioActual");
+              print("------------------------------");
+
+              // Validaciones para evitar problemas con datos nulos
+              final bool esCreadorChat = chat.sAutorUid == uidUsuarioActual;
+              final bool esCreadorPost = chat.sPostAutorUid == uidUsuarioActual;
+
+              // Condición para filtrar los chats accesibles
+              if (esCreadorChat || esCreadorPost) {
+                print("Cargando chat visible: ${chat.sTitulo}");
+
+                return GestureDetector(
+                  onTap: () {
+                    DataHolder().fbChatSelected = chat;
+                    Navigator.of(context).pushNamed('/chatview');
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            chat.sTitulo,
+                            style: TextStyle(fontSize: 16),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
+                );
+              } else {
+                // Chat no visible para el usuario actual
+                print("Chat no visible para el usuario actual: ${chat.sTitulo}");
+                return SizedBox.shrink();
+              }
             },
           );
+
+
         },
       ),
     );

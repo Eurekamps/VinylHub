@@ -7,6 +7,7 @@ class FbPost {
   final List<String> imagenURLpost; // Lista de URLs de imágenes
   final List<String> categoria;    // Lista de categorías
   final String uid;
+  final String sAutorUid;
 
   FbPost({
     required this.titulo,
@@ -14,7 +15,8 @@ class FbPost {
     required this.precio,
     required this.imagenURLpost,
     required this.categoria,
-    required this.uid
+    required this.uid,
+    required this.sAutorUid
   });
 
   Map<String, dynamic> toMap() {
@@ -24,7 +26,8 @@ class FbPost {
       'precio': precio,
       'imagenURLpost': imagenURLpost, // Guardar como lista
       'categoria': categoria,         // Guardar como lista
-      'id': uid
+      'id': uid,
+      'sAutorUid':sAutorUid
     };
   }
 
@@ -37,7 +40,8 @@ class FbPost {
       precio: data['precio'] ?? 0,
       imagenURLpost: List<String>.from(data['imagenURLpost'] ?? []),
       categoria: List<String>.from(data['categoria'] ?? []),
-      uid: doc.id
+      uid: doc.id,
+      sAutorUid: data['sAutorUid'] ?? ''
     );
   }
 }

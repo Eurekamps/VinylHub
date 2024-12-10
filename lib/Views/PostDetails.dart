@@ -80,6 +80,7 @@ class _PostDetailsState extends State<PostDetails> {
       String titulo = DataHolder().fbPostSelected!.titulo;
       String imagenChat = DataHolder().fbPostSelected!.imagenURLpost[0];
       String autorUid = FirebaseAuth.instance.currentUser!.uid;
+      String sPostAutorUid = DataHolder().fbPostSelected!.sAutorUid;
 
       FbChat nuevoChat = FbChat(
         uid: uid,
@@ -88,6 +89,7 @@ class _PostDetailsState extends State<PostDetails> {
         sAutorUid: autorUid,
         tmCreacion: Timestamp.now(),
         uidPost: uidPost,
+        sPostAutorUid: sPostAutorUid
       );
 
       //insert db
@@ -97,8 +99,18 @@ class _PostDetailsState extends State<PostDetails> {
       DataHolder().fbChatSelected = nuevoChat;
       Navigator.of(context).push(
           MaterialPageRoute(builder: (context) => ChatView()));
+
+      print("Creando chat con los siguientes datos:");
+      print("UID Chat: $uid");
+      print("Título: $titulo");
+      print("Imagen: $imagenChat");
+      print("UID Autor Chat: $autorUid");
+      print("UID Post Autor: $sPostAutorUid");
+      print("UID Post: $uidPost");
+
     }
   }
+
 
 
   @override
