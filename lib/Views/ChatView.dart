@@ -78,9 +78,11 @@ class _ChatViewState extends State<ChatView> {
   }
 
   bool esMensajePropio(FbMensaje mensaje) {
-    String uidUsuarioActual = FirebaseAuth.instance.currentUser!.uid;
+    final String? uidUsuarioActual = FirebaseAuth.instance.currentUser?.uid;
+    if (uidUsuarioActual == null) return false; // En caso de que el usuario no esté autenticado
     return mensaje.sAutorUid == uidUsuarioActual;
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,7 +99,10 @@ class _ChatViewState extends State<ChatView> {
               itemCount: arFbMensajes.length,
               itemBuilder: (context, index) {
                 final mensaje = arFbMensajes[index];
-                final esPropio = esMensajePropio(mensaje); // Usamos la función aquí
+                final esPropio = esMensajePropio(mensaje);
+
+                // Debug para confirmar valores
+                print("Mensaje: ${mensaje.sCuerpo}, Enviado por: ${mensaje.sAutorUid}, Propio: $esPropio");
 
                 return MessageBubble(
                   content: mensaje.sCuerpo,
@@ -107,6 +112,7 @@ class _ChatViewState extends State<ChatView> {
               },
             ),
           ),
+
           // Caja de texto para enviar mensajes
           Padding(
             padding: const EdgeInsets.all(8.0),
