@@ -400,7 +400,10 @@ class _HomeViewState extends State<HomeView> {
 
           // Convierte los documentos en una lista de objetos FbChat
           List<FbChat> chats = snapshot.data!.docs.map((doc) {
-            return FbChat.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>, null);
+            return FbChat.fromFirestore(
+              doc as DocumentSnapshot<Map<String, dynamic>>,
+              null,
+            );
           }).toList();
 
           if (chats.isEmpty) {
@@ -413,54 +416,130 @@ class _HomeViewState extends State<HomeView> {
               FbChat chat = chats[index];
               final String uidUsuarioActual = FirebaseAuth.instance.currentUser!.uid;
 
-              //depuracion
-              print("---- Depuración de chats ----");
-              print("Chat sTitulo: ${chat.sTitulo}");
-              print("Chat sAutorUid: ${chat.sAutorUid}");
-              print("Chat sPostAutorUid: ${chat.sPostAutorUid}");
-              print("UID Usuario Actual: $uidUsuarioActual");
-              print("------------------------------");
-
-              // Validaciones para evitar problemas con datos nulos
+              // Validaciones para los permisos del usuario
               final bool esCreadorChat = chat.sAutorUid == uidUsuarioActual;
               final bool esCreadorPost = chat.sPostAutorUid == uidUsuarioActual;
 
-              // Condición para filtrar los chats accesibles
               if (esCreadorChat || esCreadorPost) {
-                print("Cargando chat visible: ${chat.sTitulo}");
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('Chats')
+                      .doc(chat.uid)
+                      .collection('mensajes')
+                      .orderBy('tmCreacion', descending: true)  // Ordenamos para obtener el último mensaje primero
+                      .snapshots(),
+                  builder: (context, messageSnapshot) {
+                    String lastMessage = "No hay mensajes aún.";
+                    String lastMessageSender = "";
 
-                return GestureDetector(
-                  onTap: () {
-                    DataHolder().fbChatSelected = chat;
-                    Navigator.of(context).pushNamed('/chatview');
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            chat.sTitulo,
-                            style: TextStyle(fontSize: 16),
-                          ),
+                    if (messageSnapshot.hasData && messageSnapshot.data!.docs.isNotEmpty) {
+                      var messages = messageSnapshot.data!.docs;
+                      var lastMessageDoc = messages.first;  // Al estar ordenado, el primer mensaje es el más reciente
+                      lastMessage = lastMessageDoc['sCuerpo'] ?? "Mensaje vacío";
+                      lastMessageSender = lastMessageDoc['sAutorNombre'] ?? "Desconocido";
+                    }
+
+                    return GestureDetector(
+                      onTap: () {
+                        DataHolder().fbChatSelected = chat;
+                        Navigator.of(context).pushNamed('/chatview');
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.shade200,
+                              blurRadius: 5,
+                              spreadRadius: 2,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                        child: Row(
+                          children: [
+                            // Imagen del chat en formato circular
+                            ClipOval(
+                              child: chat.sImagenURL.isNotEmpty
+                                  ? Image.network(
+                                chat.sImagenURL,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  width: 50,
+                                  height: 50,
+                                  color: Colors.grey.shade300,
+                                  child: Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              )
+                                  : Container(
+                                width: 50,
+                                height: 50,
+                                color: Colors.grey.shade300,
+                                child: Icon(
+                                  Icons.image,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 12),
+                            // Información del chat
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    chat.sTitulo,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    lastMessageSender.isNotEmpty
+                                        ? "$lastMessageSender: $lastMessage"
+                                        : lastMessage,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              size: 16,
+                              color: Colors.grey.shade400,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 );
               } else {
-                // Chat no visible para el usuario actual
-                print("Chat no visible para el usuario actual: ${chat.sTitulo}");
+                // Si no es accesible para el usuario actual
                 return SizedBox.shrink();
               }
             },
           );
-
-
         },
       ),
     );
   }
+
 
 
   String _limpiarBase64(String base64String) {

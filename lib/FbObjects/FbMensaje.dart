@@ -9,12 +9,14 @@ class FbMensaje{
   String sAutorUid;
   String sImgUrl;
   Timestamp tmCreacion;
+  String sAutorNombre;
 
   FbMensaje({
     required this.sCuerpo,
     required this.sAutorUid,
     required this.sImgUrl,
-    required this.tmCreacion
+    required this.tmCreacion,
+    required this.sAutorNombre
   });
 
   factory FbMensaje.fromFirestore(
@@ -26,6 +28,7 @@ class FbMensaje{
       sImgUrl: data?['sImgUrl']!= null ? data!['sImgUrl']:"",
       sAutorUid: data?['sAutorUid'] ?? "",
       tmCreacion:data?['tmCreacion']!= null ? data!['tmCreacion']:Timestamp.now(),
+      sAutorNombre: data?['sAutorNombre']!= null ? data!['sAutorNombre']:""
     );
   }
 
@@ -35,6 +38,7 @@ class FbMensaje{
       "sImgUrl": sImgUrl,
       "sAutorUid":sAutorUid,
       "tmCreacion":tmCreacion,
+      "sAutorNombre":sAutorNombre
 
     };
   }

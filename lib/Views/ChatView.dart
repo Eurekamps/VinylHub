@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
 
 import '../FbObjects/FbMensaje.dart';
+import '../FbObjects/FbPerfil.dart';
 import '../Singletone/DataHolder.dart';
 
 class ChatView extends StatefulWidget{
@@ -18,6 +21,7 @@ class _ChatViewState extends State<ChatView> {
   TextEditingController imgcontroller = TextEditingController();
   var db = FirebaseFirestore.instance;
   String sRutaChatMensajes="/Chats/"+DataHolder().fbChatSelected!.uid+"/mensajes";
+  FbPerfil? perfil = DataHolder().miPerfil;
 
 
   @override
@@ -26,6 +30,7 @@ class _ChatViewState extends State<ChatView> {
     descargarTodosMensajes();
     DataHolder().initPlatformAdmin(context);
   }
+
 
   int compararArray(FbMensaje a, FbMensaje b){
 
@@ -42,22 +47,41 @@ class _ChatViewState extends State<ChatView> {
       toFirestore: (FbMensaje mensaje, _) => mensaje.toFirestore(),
     );
 
-    ref.snapshots().listen((event) {
+    // Guardamos la referencia del StreamSubscription para cancelarla después
+    StreamSubscription? subscription;
+
+    subscription = ref.snapshots().listen((event) {
       arTemp.clear();
       for (var doc in event.docs) {
         final mensaje = doc.data();
-        print("Mensaje cargado: ${mensaje.sCuerpo}, Autor: ${mensaje.sAutorUid}");
-        arTemp.add(mensaje);
+        if (mensaje != null) { // Verifica que el mensaje no sea null
+          print("Mensaje cargado: ${mensaje.sCuerpo}, Autor: ${mensaje.sAutorUid}");
+          arTemp.add(mensaje);
+        } else {
+          print("Mensaje nulo recibido");
+        }
       }
 
       arTemp.sort(compararArray);
 
-      setState(() {
-        arFbMensajes.clear();
-        arFbMensajes.addAll(arTemp);
-      });
+      // Verifica si el widget está montado antes de llamar a setState
+      if (mounted) {
+        setState(() {
+          arFbMensajes.clear();
+          arFbMensajes.addAll(arTemp);
+        });
+      }
     });
+
+    // Asegúrate de cancelar el listener en dispose()
+    @override
+    void dispose() {
+      subscription?.cancel(); // Cancela la suscripción al stream
+      super.dispose();
+    }
   }
+
+
 
 
   void presionarEnvio() async{
@@ -65,7 +89,8 @@ class _ChatViewState extends State<ChatView> {
         sCuerpo: controller.text,
         tmCreacion:Timestamp.now(),
         sImgUrl: imgcontroller.text,
-        sAutorUid: FirebaseAuth.instance.currentUser!.uid
+        sAutorUid: FirebaseAuth.instance.currentUser!.uid,
+        sAutorNombre: perfil!.nombre
     );
     var nuevoDoc=await db.collection(sRutaChatMensajes).add(nuevoMensaje.toFirestore());
     controller.clear();
