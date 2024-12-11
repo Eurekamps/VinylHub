@@ -21,7 +21,9 @@ class _ChatViewState extends State<ChatView> {
   TextEditingController imgcontroller = TextEditingController();
   var db = FirebaseFirestore.instance;
   String sRutaChatMensajes="/Chats/"+DataHolder().fbChatSelected!.uid+"/mensajes";
-  FbPerfil? perfil = DataHolder().miPerfil;
+  bool isLoading = true; // Para saber si estamos esperando a que se cargue el perfil
+
+
 
 
   @override
@@ -29,6 +31,20 @@ class _ChatViewState extends State<ChatView> {
     // TODO: implement initState
     descargarTodosMensajes();
     DataHolder().initPlatformAdmin(context);
+    _cargarPerfil();
+  }
+
+  Future<void> _cargarPerfil() async {
+    // Obtener el uid del usuario actual
+    String uidUsuarioActual = FirebaseAuth.instance.currentUser!.uid;
+
+    // Cargar el perfil desde Firestore
+    await DataHolder().obtenerPerfilDeFirestore(uidUsuarioActual);
+
+    // Después de obtener el perfil, cambiamos el estado de carga
+    setState(() {
+      isLoading = false;
+    });
   }
 
 
@@ -84,18 +100,29 @@ class _ChatViewState extends State<ChatView> {
 
 
 
-  void presionarEnvio() async{
-    FbMensaje nuevoMensaje=FbMensaje(
-        sCuerpo: controller.text,
-        tmCreacion:Timestamp.now(),
-        sImgUrl: imgcontroller.text,
-        sAutorUid: FirebaseAuth.instance.currentUser!.uid,
-        sAutorNombre: perfil!.nombre
-    );
-    var nuevoDoc=await db.collection(sRutaChatMensajes).add(nuevoMensaje.toFirestore());
-    controller.clear();
+  void presionarEnvio() async {
+    // Asegúrate de que el perfil esté disponible
+    FbPerfil? perfil = DataHolder().miPerfil;
 
+    if (perfil == null) {
+      // Si el perfil no está cargado o es null, muestra un error
+      print("Error: El perfil no está disponible.");
+      return;  // Salimos de la función para evitar que se intente enviar el mensaje sin perfil
+    }
+
+    // Si el perfil está disponible, puedes continuar con el envío del mensaje
+    FbMensaje nuevoMensaje = FbMensaje(
+      sCuerpo: controller.text,
+      tmCreacion: Timestamp.now(),
+      sImgUrl: imgcontroller.text,
+      sAutorUid: FirebaseAuth.instance.currentUser!.uid,
+      sAutorNombre: perfil.nombre, // Usamos el nombre del perfil
+    );
+
+    var nuevoDoc = await db.collection(sRutaChatMensajes).add(nuevoMensaje.toFirestore());
+    controller.clear();
   }
+
 
   bool esMensajePropio(FbMensaje mensaje) {
     final String? uidUsuarioActual = FirebaseAuth.instance.currentUser?.uid;

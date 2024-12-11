@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
+import 'package:hijos_de_fluttarkia/Views/TuPerfil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // Para convertir la imagen a base64
 import 'dart:typed_data'; // Para trabajar con bytes de la imagen
@@ -172,39 +173,42 @@ class _HomeViewState extends State<HomeView> {
           return Center(child: CircularProgressIndicator());
         }
 
-        var posts = snapshot.data!.docs.map((doc) {
-          return FbPost.fromFirestore(doc);
-        }).toList();
+        final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+
+       //consulta para asignar los posts creados por otros usuarios
+        var posts = snapshot.data!.docs
+            .map((doc) => FbPost.fromFirestore(doc))
+            .where((post) => post.sAutorUid != currentUserUid)
+            .toList();
 
         return ListView.builder(
           itemCount: posts.length,
           itemBuilder: (context, index) {
             FbPost post = posts[index];
 
-            return
-              GestureDetector(
-                onTap: (){onPostItem_MasDatosClicked(context, post);},
-                child:
-                  Card(
-                    margin: EdgeInsets.all(8),
-                    child: ListTile(
-                      title: Text(post.titulo),
-                      subtitle: Text('Categorías: ${post.categoria.join(', ')}'),
-                      trailing: post.imagenURLpost.isNotEmpty
-                          ? Image.memory(
-                        base64Decode(_limpiarBase64(post.imagenURLpost.first)),
-                        width: 150,
-                        height: 150,
-                      )
-                          : null,
-                    ),
-                  ),
-              );
+            return GestureDetector(
+              onTap: () => onPostItem_MasDatosClicked(context, post),
+              child: Card(
+                margin: EdgeInsets.all(8),
+                child: ListTile(
+                  title: Text(post.titulo),
+                  subtitle: Text('Categorías: ${post.categoria.join(', ')}'),
+                  trailing: post.imagenURLpost.isNotEmpty
+                      ? Image.memory(
+                    base64Decode(_limpiarBase64(post.imagenURLpost.first)),
+                    width: 150,
+                    height: 150,
+                  )
+                      : null,
+                ),
+              ),
+            );
           },
         );
       },
     );
   }
+
 
   Widget _buildGridScreen() {
     return StreamBuilder<QuerySnapshot>(
@@ -214,9 +218,13 @@ class _HomeViewState extends State<HomeView> {
           return Center(child: CircularProgressIndicator());
         }
 
-        var posts = snapshot.data!.docs.map((doc) {
-          return FbPost.fromFirestore(doc);
-        }).toList();
+        final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+
+        //consulta para asignar los posts creados por otros usuarios
+        var posts = snapshot.data!.docs
+            .map((doc) => FbPost.fromFirestore(doc))
+            .where((post) => post.sAutorUid != currentUserUid)
+            .toList();
 
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -228,77 +236,75 @@ class _HomeViewState extends State<HomeView> {
           itemCount: posts.length,
           itemBuilder: (context, index) {
             FbPost post = posts[index];
-            return
-            GestureDetector(
-              onTap: (){onPostItem_MasDatosClicked(context, post);},
-              child:
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10), // Bordes redondeados
-                  ),
-                  elevation: 4, // Sombra para diseño más llamativo
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0), // Espaciado interno
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center, // Centrar contenido horizontalmente
-                      children: [
-                        if (post.imagenURLpost.isNotEmpty)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10), // Redondea la imagen
-                            child: AspectRatio(
-                              aspectRatio: 1.5, // Relación de aspecto fija (ancho/alto)
-                              child: Image.memory(
-                                base64Decode(_limpiarBase64(post.imagenURLpost.first)),
-                                fit: BoxFit.contain, // Muestra toda la imagen dentro del área sin recortarla
-                              ),
-                            ),
-                          )
-                        else
-                          AspectRatio(
-                            aspectRatio: 1.5, // Relación de aspecto para imágenes no disponibles
-                            child: Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                size: 50,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-                        SizedBox(height: 8), // Espaciado entre la imagen y el título
-                        Text(
-                          post.titulo,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 4), // Espaciado entre el título y la categoría
-                        Text(
-                          'Categorías: ${post.categoria.join(', ')}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 4,),
-                        Text(
-                          'Precio: ${post.precio.toString()} €',
-                          style: TextStyle(fontSize: 14),
-                        )
 
-                      ],
-                    ),
+            return GestureDetector(
+              onTap: () => onPostItem_MasDatosClicked(context, post),
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10), // Bordes redondeados
+                ),
+                elevation: 4, // Sombra para diseño más llamativo
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0), // Espaciado interno
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center, // Centrar contenido horizontalmente
+                    children: [
+                      if (post.imagenURLpost.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10), // Redondea la imagen
+                          child: AspectRatio(
+                            aspectRatio: 1.5, // Relación de aspecto fija (ancho/alto)
+                            child: Image.memory(
+                              base64Decode(_limpiarBase64(post.imagenURLpost.first)),
+                              fit: BoxFit.contain, // Muestra toda la imagen dentro del área sin recortarla
+                            ),
+                          ),
+                        )
+                      else
+                        AspectRatio(
+                          aspectRatio: 1.5, // Relación de aspecto para imágenes no disponibles
+                          child: Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      SizedBox(height: 8), // Espaciado entre la imagen y el título
+                      Text(
+                        post.titulo,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 4), // Espaciado entre el título y la categoría
+                      Text(
+                        'Categorías: ${post.categoria.join(', ')}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Precio: ${post.precio.toString()} €',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ],
                   ),
                 ),
+              ),
             );
           },
         );
-
       },
     );
   }
+
 
   Widget _buildCreatePostScreen() {
     return Padding(
@@ -542,6 +548,8 @@ class _HomeViewState extends State<HomeView> {
 
 
 
+
+
   String _limpiarBase64(String base64String) {
     if (base64String.startsWith('data:image')) {
       final index = base64String.indexOf('base64,');
@@ -556,8 +564,16 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("VinylHub"),
         backgroundColor: Colors.black54,
+        title: const Center(
+          child: Text("VinylHub", style: TextStyle(
+            fontFamily: 'Roboto', // Cambia esto al nombre de la fuente que quieras usar
+            fontWeight: FontWeight.bold, // Negrita
+            fontSize: 22,
+            color: Colors.black,
+          ),
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -585,13 +601,21 @@ class _HomeViewState extends State<HomeView> {
         ],
       ),
       drawer: MiDrawer1(),
-      body: _selectedIndex == 0 ? (_isGridView ? _buildGridScreen() : _buildListScreen())  :
-          _selectedIndex==1 ?
-          _buildCreatePostScreen() :
-          _buildPantallaChats(),
-      bottomNavigationBar: BottomNavigationBar(
+      body: _selectedIndex == 0
+          ? (_isGridView ? _buildGridScreen() : _buildListScreen())
+          : _selectedIndex == 1
+          ? _buildCreatePostScreen()
+          : _selectedIndex == 2
+          ? _buildPantallaChats()
+          : TuPerfil(), //esta logica esta en otra vista a parte
+      bottomNavigationBar:  BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        selectedItemColor: Colors.black, // Color para el texto e icono del elemento seleccionado
+        unselectedItemColor: Colors.grey, // Color para el texto e icono de los elementos no seleccionados
+        backgroundColor: Colors.white,
+        selectedLabelStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold), // Estilo del texto seleccionado
+        unselectedLabelStyle: const TextStyle(color: Colors.grey),
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
@@ -604,6 +628,10 @@ class _HomeViewState extends State<HomeView> {
           BottomNavigationBarItem(
               icon: Icon(Icons.chat),
               label: 'Chats',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_box),
+            label: 'Perfil',
           ),
 
         ],

@@ -61,57 +61,52 @@ class _PostDetailsState extends State<PostDetails> {
   }
 
   void crearNuevoChat() async {
-    String? uidPost = DataHolder().fbPostSelected!.uid;
+    String uidPost = DataHolder().fbPostSelected!.uid;
+    String sPostAutorUid = DataHolder().fbPostSelected!.sAutorUid;
+    String sAutorUid = FirebaseAuth.instance.currentUser!.uid;
+
+    // Busca si ya existe un chat entre el usuario actual y el creador del post
     var chatQuery = await _firestore
         .collection('Chats')
-        .where('uidPost', isEqualTo: uidPost)
+        .where('uidPost', isEqualTo: uidPost) // Filtra por el post actual
+        .where('sPostAutorUid', isEqualTo: sPostAutorUid) // Filtra por el vendedor
+        .where('sAutorUid', isEqualTo: sAutorUid) // Filtra por el comprador (usuario actual)
         .limit(1)
         .get();
 
-    if (chatQuery.docs.isNotEmpty) { //si esxiste el chat, actualiza el fbchatselected
+    if (chatQuery.docs.isNotEmpty) {
+      // Si el chat ya existe, accede a él
       var chatDoc = chatQuery.docs.first;
       DataHolder().fbChatSelected = FbChat.fromFirestore(chatDoc, null);
-
       Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => ChatView()));
+          MaterialPageRoute(builder: (context) => ChatView())
+      );
     } else {
-      //Si ese chat no existe, creara uno nuevo
+      // Si no existe un chat, crea uno nuevo
       String uid = FirebaseFirestore.instance.collection('Chats').doc().id;
       String titulo = DataHolder().fbPostSelected!.titulo;
       String imagenChat = DataHolder().fbPostSelected!.imagenURLpost[0];
-      String autorUid = FirebaseAuth.instance.currentUser!.uid;
-      String sPostAutorUid = DataHolder().fbPostSelected!.sAutorUid;
 
       FbChat nuevoChat = FbChat(
         uid: uid,
         sTitulo: titulo,
         sImagenURL: imagenChat,
-        sAutorUid: autorUid,
+        sAutorUid: sAutorUid,
         tmCreacion: Timestamp.now(),
         uidPost: uidPost,
-        sPostAutorUid: sPostAutorUid
+        sPostAutorUid: sPostAutorUid,
       );
 
-      //insert db
+      // Guarda el nuevo chat en Firestore
       await _firestore.collection('Chats').doc(uid).set(nuevoChat.toFirestore());
-      print("Chat creado: ${nuevoChat.toFirestore()}");
 
+      // Navega al nuevo chat
       DataHolder().fbChatSelected = nuevoChat;
       Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => ChatView()));
-
-      print("Creando chat con los siguientes datos:");
-      print("UID Chat: $uid");
-      print("Título: $titulo");
-      print("Imagen: $imagenChat");
-      print("UID Autor Chat: $autorUid");
-      print("UID Post Autor: $sPostAutorUid");
-      print("UID Post: $uidPost");
-
+          MaterialPageRoute(builder: (context) => ChatView())
+      );
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
