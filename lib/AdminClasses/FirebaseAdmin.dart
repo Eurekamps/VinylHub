@@ -322,4 +322,5 @@ class FirebaseAdmin {
       print("Error al insertar perfil: $e");
     }
   }
+
 }
