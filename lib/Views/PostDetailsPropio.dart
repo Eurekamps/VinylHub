@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
+import 'package:hijos_de_fluttarkia/FbObjects/FbFavorito.dart';
 
 import '../Singletone/DataHolder.dart';
 import 'ChatView.dart';
@@ -21,6 +22,7 @@ class _PostDetailsState extends State<PostDetails> {
   int currentIndex = 0; // Índice de la imagen actual
   late PageController _pageController;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
 
   @override
   void initState() {
@@ -60,53 +62,7 @@ class _PostDetailsState extends State<PostDetails> {
     }
   }
 
-  void crearNuevoChat() async {
-    String uidPost = DataHolder().fbPostSelected!.uid;
-    String sPostAutorUid = DataHolder().fbPostSelected!.sAutorUid;
-    String sAutorUid = FirebaseAuth.instance.currentUser!.uid;
 
-    // Busca si ya existe un chat entre el usuario actual y el creador del post
-    var chatQuery = await _firestore
-        .collection('Chats')
-        .where('uidPost', isEqualTo: uidPost) // Filtra por el post actual
-        .where('sPostAutorUid', isEqualTo: sPostAutorUid) // Filtra por el vendedor
-        .where('sAutorUid', isEqualTo: sAutorUid) // Filtra por el comprador (usuario actual)
-        .limit(1)
-        .get();
-
-    if (chatQuery.docs.isNotEmpty) {
-      // Si el chat ya existe, accede a él
-      var chatDoc = chatQuery.docs.first;
-      DataHolder().fbChatSelected = FbChat.fromFirestore(chatDoc, null);
-      Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => ChatView())
-      );
-    } else {
-      // Si no existe un chat, crea uno nuevo
-      String uid = FirebaseFirestore.instance.collection('Chats').doc().id;
-      String titulo = DataHolder().fbPostSelected!.titulo;
-      String imagenChat = DataHolder().fbPostSelected!.imagenURLpost[0];
-
-      FbChat nuevoChat = FbChat(
-        uid: uid,
-        sTitulo: titulo,
-        sImagenURL: imagenChat,
-        sAutorUid: sAutorUid,
-        tmCreacion: Timestamp.now(),
-        uidPost: uidPost,
-        sPostAutorUid: sPostAutorUid,
-      );
-
-      // Guarda el nuevo chat en Firestore
-      await _firestore.collection('Chats').doc(uid).set(nuevoChat.toFirestore());
-
-      // Navega al nuevo chat
-      DataHolder().fbChatSelected = nuevoChat;
-      Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => ChatView())
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +144,7 @@ class _PostDetailsState extends State<PostDetails> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(onPressed: crearNuevoChat,icon: const Icon(Icons.chat), label: Text("Chat"),)
+                  ElevatedButton.icon(onPressed: (){},icon: const Icon(Icons.favorite), label: Text("Chat"),)
                 ],
               )
             ],

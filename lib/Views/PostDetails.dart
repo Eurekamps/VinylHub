@@ -4,14 +4,14 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
 
+import '../FbObjects/FbFavorito.dart';
 import '../Singletone/DataHolder.dart';
 import 'ChatView.dart';
 
-class PostDetails extends StatefulWidget{
-
+class PostDetails extends StatefulWidget {
   final Function() onClose;
 
-  PostDetails({super.key,required this.onClose});
+  PostDetails({super.key, required this.onClose});
 
   @override
   State<PostDetails> createState() => _PostDetailsState();
@@ -21,11 +21,15 @@ class _PostDetailsState extends State<PostDetails> {
   int currentIndex = 0; // Índice de la imagen actual
   late PageController _pageController;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String sRutaPerfil =
+      "perfiles/${FirebaseAuth.instance.currentUser!.uid}/Favoritos";
+  bool _isFavorito = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: currentIndex);
+    _checkIfFavorito(); // Verificar si el post ya es favorito al cargar
   }
 
   @override
@@ -108,10 +112,64 @@ class _PostDetailsState extends State<PostDetails> {
     }
   }
 
+  Future<void> _checkIfFavorito() async {
+    // Identificar el ID del post y el usuario
+    String uidPostFavorito = DataHolder().fbPostSelected!.uid;
+    String uidUsuario = FirebaseAuth.instance.currentUser!.uid;
+
+    final favoritosRef = _firestore
+        .collection("perfiles")
+        .doc(uidUsuario)
+        .collection("Favoritos");
+
+    try {
+      final favoritoSnapshot = await favoritosRef.doc(uidPostFavorito).get();
+      if (favoritoSnapshot.exists) {
+        setState(() {
+          _isFavorito = true; // El post ya es favorito
+        });
+      }
+    } catch (e) {
+      print("Error al verificar favoritos: $e");
+    }
+  }
+
+  Future<void> addPostFavoritos() async {
+    String uidPostFavorito = DataHolder().fbPostSelected!.uid;
+    FbFavorito nuevoFavorito = FbFavorito(uidPost: uidPostFavorito);
+    String uidUsuario = FirebaseAuth.instance.currentUser!.uid;
+
+    final favoritosRef = _firestore //subcoleccion favs en perfiles
+        .collection("perfiles")
+        .doc(uidUsuario)
+        .collection("Favoritos");
+
+    //cambia el estado de favorito o no favorito para el visual
+    setState(() {
+      _isFavorito = !_isFavorito;
+    });
+
+    try {
+      final favoritoSnapshot = await favoritosRef.doc(uidPostFavorito).get();
+
+      if (!favoritoSnapshot.exists) {
+        //comprueba si existe el id en favoritos
+        await favoritosRef.doc(uidPostFavorito).set(nuevoFavorito.toFirestore());
+        //añadir favs
+        print("Post añadido a favoritos.");
+      } else {
+        await favoritosRef.doc(uidPostFavorito).delete(); //eliminar de favs
+        print("Post eliminado de favoritos.");
+      }
+    } catch (e) {
+      print("Error al gestionar favoritos: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var post = DataHolder().fbPostSelected!;
-    var images = post.imagenURLpost; // Lista de URLs de imágenes
+    var images = post.imagenURLpost;
 
     return Scaffold(
       appBar: AppBar(
@@ -134,7 +192,6 @@ class _PostDetailsState extends State<PostDetails> {
                   height: 300, // Altura fija para las imágenes
                   child: Stack(
                     children: [
-                      // Página de imágenes
                       PageView.builder(
                         controller: _pageController,
                         onPageChanged: (index) {
@@ -146,12 +203,11 @@ class _PostDetailsState extends State<PostDetails> {
                         itemBuilder: (context, index) {
                           return Image.network(
                             images[index],
-                            fit: BoxFit.contain, // Ajuste correcto
+                            fit: BoxFit.contain,
                             width: double.infinity,
                           );
                         },
                       ),
-                      // Flecha izquierda
                       Positioned(
                         left: 10,
                         top: 130,
@@ -160,7 +216,6 @@ class _PostDetailsState extends State<PostDetails> {
                           onPressed: currentIndex > 0 ? _previousImage : null,
                         ),
                       ),
-                      // Flecha derecha
                       Positioned(
                         right: 10,
                         top: 130,
@@ -184,13 +239,25 @@ class _PostDetailsState extends State<PostDetails> {
                 style: TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 16,),
+              SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                ElevatedButton.icon(onPressed: crearNuevoChat,icon: const Icon(Icons.chat), label: Text("Chat"),)
+                  ElevatedButton.icon(
+                    onPressed: crearNuevoChat,
+                    icon: const Icon(Icons.chat),
+                    label: Text("Chat"),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: addPostFavoritos,
+                    icon: Icon(
+                      _isFavorito ? Icons.favorite : Icons.favorite_border,
+                      color: _isFavorito ? Colors.red : null,
+                    ),
+                    label: Text(_isFavorito ? "Favorito" : "Añadir Favoritos"),
+                  ),
                 ],
-              )
+              ),
             ],
           ),
         ),

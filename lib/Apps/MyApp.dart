@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hijos_de_fluttarkia/Views/ChatView.dart';
+import 'package:hijos_de_fluttarkia/Views/FavoritosView.dart';
 import 'package:hijos_de_fluttarkia/Views/PostDetails.dart';
 import 'package:hijos_de_fluttarkia/Views/TuPerfil.dart';
 
@@ -27,7 +28,8 @@ class MyApp extends StatelessWidget{
       '/chatview': (context) => ChatView(),
       '/postdetails': (context) => PostDetails(onClose: () {  },),
       '/tuperfil': (context) => TuPerfil(),
-      '/editprofileview': (context) => EditProfileView()
+      '/editprofileview': (context) => EditProfileView(),
+      '/favoritosview': (context) => FavoritosView()
 
 
     };

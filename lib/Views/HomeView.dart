@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
+import 'package:hijos_de_fluttarkia/Views/FavoritosView.dart';
 import 'package:hijos_de_fluttarkia/Views/TuPerfil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // Para convertir la imagen a base64
@@ -604,10 +605,12 @@ class _HomeViewState extends State<HomeView> {
       body: _selectedIndex == 0
           ? (_isGridView ? _buildGridScreen() : _buildListScreen())
           : _selectedIndex == 1
-          ? _buildCreatePostScreen()
+          ? FavoritosView()
           : _selectedIndex == 2
+          ? _buildCreatePostScreen()
+          : _selectedIndex == 3
           ? _buildPantallaChats()
-          : TuPerfil(), //esta logica esta en otra vista a parte
+          : TuPerfil(),
       bottomNavigationBar:  BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -620,6 +623,10 @@ class _HomeViewState extends State<HomeView> {
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: 'Favoritos',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.post_add),
