@@ -4,6 +4,7 @@ import 'package:hijos_de_fluttarkia/Views/PostDetails.dart';
 import 'package:hijos_de_fluttarkia/Views/TuPerfil.dart';
 
 
+import '../Views/EditProfileView.dart';
 import '../Views/HomeView.dart';
 import '../Views/LoginView.dart';
 import '../Views/ProfileView.dart';
@@ -25,7 +26,9 @@ class MyApp extends StatelessWidget{
       '/profileview': (context) => ProfileView(),
       '/chatview': (context) => ChatView(),
       '/postdetails': (context) => PostDetails(onClose: () {  },),
-      '/tuperfil': (context) => TuPerfil()
+      '/tuperfil': (context) => TuPerfil(),
+      '/editprofileview': (context) => EditProfileView()
+
 
     };
 

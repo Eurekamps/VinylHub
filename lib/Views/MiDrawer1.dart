@@ -1,26 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../FbObjects/FbPerfil.dart';  // Asegúrate de tener este archivo con tu modelo FbPerfil.
+import 'package:hijos_de_fluttarkia/AdminClasses/FirebaseAdmin.dart';
+import '../FbObjects/FbPerfil.dart';
+import '../Singletone/DataHolder.dart';  // Asegúrate de tener este archivo con tu modelo FbPerfil.
 
 class MiDrawer1 extends StatelessWidget {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String uid = FirebaseAuth.instance.currentUser!.uid;  // Obtiene el UID del perfil logueado.
-
-  // Función para obtener los datos del perfil desde Firestore
-  Future<FbPerfil> _getUserProfile() async {
-    DocumentSnapshot<Map<String, dynamic>> docSnap = await _firestore.collection('perfiles').doc(uid).get() as DocumentSnapshot<Map<String, dynamic>>;  // Realizamos el cast
-    if (docSnap.exists) {
-      return FbPerfil.fromFirestore(docSnap, null);  // Asumiendo que tienes el método fromFirestore en FbPerfil.
-    } else {
-      throw Exception("perfil no encontrado");
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<FbPerfil>(
-      future: _getUserProfile(),  // Cargar los datos del perfil
+      future: FirebaseAdmin().getUserProfile(),  // Cargar los datos del perfil
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());

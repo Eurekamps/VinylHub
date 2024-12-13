@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,6 +17,7 @@ class FirebaseAdmin {
   TextEditingController tecEmail = TextEditingController();
   TextEditingController tecPass = TextEditingController();
   TextEditingController tecPassRepeat = TextEditingController();
+
 
   // Iniciar sesión con correo y contraseña
   Future<void> clickLogin(
@@ -45,6 +47,7 @@ class FirebaseAdmin {
         print("Datos del perfil: ${DataHolder().miPerfil}");
       } else {
         print("El documento no existe");
+        Navigator.of(context).pushNamed('/profileview');
       }
 
       if (DataHolder().miPerfil != null &&
@@ -83,7 +86,7 @@ class FirebaseAdmin {
     String imagenURL = "https://www.example.com/default-profile-image.png";
     if (avatar != null) {
       try {
-        imagenURL = await subirImagen(user.uid, avatar);
+        imagenURL = await subirImagen(user.uid);
         print("Imagen subida correctamente: $imagenURL");
       } catch (e) {
         print("Error al subir la imagen: $e");
@@ -173,52 +176,22 @@ class FirebaseAdmin {
     }
   }
 
-  Future<String> subirImagen(String userID, dynamic avatar) async {
-    String sUrlDeImagen = "";
-
-    final storageRef = FirebaseStorage.instance.ref();
-    final avatarImageRef = storageRef.child("images/users/$userID/avatar.jpg");
-
+  Future<String> subirImagen(dynamic avatar) async {
     try {
-      if (avatar == null) {
-        throw Exception("No hay imagen seleccionada para subir.");
-      }
-
-      // Validar el contenido del avatar antes de subirlo
-      if (kIsWeb) {
-        if (avatar.isEmpty) {
-          throw Exception("El avatar está vacío o no válido.");
-        } else {
-          print("Avatar válido: ${avatar.length} bytes");
-        }
-
-        print("Subiendo imagen desde web...");
-        final uploadTask = avatarImageRef.putData(avatar);
-        final snapshot = await uploadTask.whenComplete(() => {});
-        print("Subida completada. Obteniendo URL...");
-        sUrlDeImagen = await snapshot.ref.getDownloadURL();
+      if (avatar is Uint8List) {
+        print("Codificando imagen como Base64...");
+        String base64String = base64Encode(avatar);
+        print("Imagen codificada en Base64: ${base64String.length} caracteres");
+        return "data:image/jpeg;base64,$base64String";
       } else {
-        if (!(avatar is File)) {
-          throw Exception("El avatar no es un archivo válido.");
-        } else {
-          print("Avatar válido para móvil: ${await avatar.length()} bytes");
-        }
-
-        print("Subiendo imagen desde dispositivo...");
-        final uploadTask = avatarImageRef.putFile(avatar);
-        final snapshot = await uploadTask.whenComplete(() => {});
-        print("Subida completada. Obteniendo URL...");
-        sUrlDeImagen = await snapshot.ref.getDownloadURL();
+        throw Exception("Formato de avatar no soportado. Debe ser Uint8List.");
       }
-
-      print("Imagen subida con éxito: $sUrlDeImagen");
     } catch (e) {
-      print("Error al subir imagen: $e");
-      rethrow; // Relanzar error para manejarlo en el método que lo llama
+      print("Error al subir la imagen: $e");
+      throw e;
     }
-
-    return sUrlDeImagen;
   }
+
 
 
   // Obtener el mensaje de error de Firebase
@@ -322,5 +295,19 @@ class FirebaseAdmin {
       print("Error al insertar perfil: $e");
     }
   }
+
+  Future<FbPerfil> getUserProfile() async { //funcion para cargar el perfil del usuario
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final String uid = FirebaseAuth.instance.currentUser!.uid;
+    DocumentSnapshot<Map<String, dynamic>> docSnap = await firestore.collection(
+        'perfiles').doc(uid).get(); // Realizamos el cast
+    if (docSnap.exists) {
+      return FbPerfil.fromFirestore(docSnap,
+          null); // Asumiendo que tienes el método fromFirestore en FbPerfil.
+    } else {
+      throw Exception("perfil no encontrado");
+    }
+  }
+
 
 }
