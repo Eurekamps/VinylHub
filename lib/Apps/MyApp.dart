@@ -8,6 +8,7 @@ import '../Views/LoginView.dart';
 import '../Views/ProfileView.dart';
 import '../Views/RegisterView.dart';
 import '../Views/Splashview.dart';
+import '../Views/home_screen.dart';
 
 class MyApp extends StatelessWidget{
   const MyApp({super.key});
@@ -19,10 +20,11 @@ class MyApp extends StatelessWidget{
     Map<String, Widget Function(BuildContext)> rutas = {
       '/splashview':(context) =>   SplashView(),
       '/loginview':(context) =>   LoginView(),
-      '/homeview':(context) =>   HomeView(),
+      '/homeview':(context) =>   HomeScreen(),
       '/registerview':(context) => RegisterView(),
       '/profileview': (context) => ProfileView(),
       '/chatview': (context) => ChatView(),
+      '/home'
       '/postdetails': (context) => PostDetails(onClose: () {  },)
     };
 
