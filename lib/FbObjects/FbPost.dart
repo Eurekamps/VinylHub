@@ -44,4 +44,17 @@ class FbPost {
       sAutorUid: data['sAutorUid'] ?? ''
     );
   }
+
+  // Convertir un objeto JSON en un FbPost
+  factory FbPost.fromJson(Map<String, dynamic> json) {
+    return FbPost(
+      titulo: json['titulo'],
+      descripcion: json['descripcion'],
+      precio: json['precio'],
+      imagenURLpost: List<String>.from(json['imagenURLpost']),
+      categoria: List<String>.from(json['categoria']),
+      uid: json['id'],
+      sAutorUid: json['sAutorUid'],
+    );
+  }
 }

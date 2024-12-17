@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // Para convertir la imagen a base64
 import 'dart:typed_data'; // Para trabajar con bytes de la imagen
 import '../FbObjects/FbPost.dart';
+import '../Services/DiscogsService.dart';
 import '../Singletone/DataHolder.dart';
 import 'MiDrawer1.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,6 +28,10 @@ class _HomeViewState extends State<HomeView> {
   List<String> _imagenURLs = [];
   List<String> _categoriasSeleccionadas = [];
   final ImagePicker _picker = ImagePicker();
+
+  final DiscogsService _discogsService = DiscogsService();
+  List<dynamic> _results = []; // Lista de resultados de vinilos
+  bool _isSearching = false;
 
   int _selectedIndex = 0;
   bool _isGridView = true;
@@ -136,13 +141,13 @@ class _HomeViewState extends State<HomeView> {
     }
 
     FbPost nuevaPost = FbPost(
-      titulo: titulo,
-      descripcion: descripcion,
-      precio: precio,
-      imagenURLpost: _imagenURLs,
-      categoria: _categoriasSeleccionadas,
-      uid: uid,
-      sAutorUid: FirebaseAuth.instance.currentUser!.uid
+        titulo: titulo,
+        descripcion: descripcion,
+        precio: precio,
+        imagenURLpost: _imagenURLs,
+        categoria: _categoriasSeleccionadas,
+        uid: uid,
+        sAutorUid: FirebaseAuth.instance.currentUser!.uid
     );
 
     await _firestore.collection('Posts').add(nuevaPost.toMap());
@@ -165,6 +170,42 @@ class _HomeViewState extends State<HomeView> {
       blListaPostsVisible=false;
     });
   }
+  void _searchVinyls(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _results = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    try {
+      final data = await _discogsService.searchVinyl(query);
+      setState(() {
+        _results = data;
+      });
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al buscar vinilos: $e')),
+      );
+    } finally {
+      setState(() {
+        _isSearching = false;
+      });
+    }
+  }
+
+  // Función para manejar la selección de un vinilo y autocompletar el título
+  void _onSuggestionTap(String title) {
+    _tituloController.text = title;
+    setState(() {
+      _results = [];
+    });
+  }
 
   Widget _buildListScreen() {
     return StreamBuilder<QuerySnapshot>(
@@ -176,7 +217,7 @@ class _HomeViewState extends State<HomeView> {
 
         final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
 
-       //consulta para asignar los posts creados por otros usuarios
+        //consulta para asignar los posts creados por otros usuarios
         var posts = snapshot.data!.docs
             .map((doc) => FbPost.fromFirestore(doc))
             .where((post) => post.sAutorUid != currentUserUid)
@@ -312,10 +353,33 @@ class _HomeViewState extends State<HomeView> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // Campo de Título con búsqueda de vinilos
           TextField(
             controller: _tituloController,
-            decoration: InputDecoration(labelText: 'Título del Post'),
+            decoration: InputDecoration(labelText: 'Título del disco'),
+            onChanged: (text) {
+              _searchVinyls(text);
+            },
           ),
+
+          // Sugerencias de vinilos cuando existen resultados de búsqueda
+          if (_results.isNotEmpty)
+            Container(
+              height: 200,
+              child: ListView.builder(
+                itemCount: _results.length,
+                itemBuilder: (context, index) {
+                  final item = _results[index];
+                  return ListTile(
+                    title: Text(item['title'] ?? 'Sin título'),
+                    subtitle: Text(item['year'] ?? 'Año desconocido'),
+                    onTap: () => _onSuggestionTap(item['title'] ?? ''),
+                  );
+                },
+              ),
+            ),
+
+          // Otros campos como descripción, precio, etc.
           TextField(
             controller: _descripcionController,
             decoration: InputDecoration(labelText: 'Descripción'),
@@ -325,6 +389,7 @@ class _HomeViewState extends State<HomeView> {
             decoration: InputDecoration(labelText: 'Precio'),
           ),
 
+          // Selección de categorías
           DropdownButtonFormField<String>(
             items: ['Rock', 'Pop', 'R&B','Hip-Hop', 'Soul', 'Clásica','Heavy Metal', 'Jazz', 'Neo Soul']
                 .map((categoria) => DropdownMenuItem(
@@ -353,6 +418,8 @@ class _HomeViewState extends State<HomeView> {
             ))
                 .toList(),
           ),
+
+          // Botones de galería y cámara
           SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -577,10 +644,9 @@ class _HomeViewState extends State<HomeView> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.of(context).pushNamed('/loginview');
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.of(context).pushNamed('/busquedaview');
             },
           ),
           PopupMenuButton<int>(
@@ -633,8 +699,8 @@ class _HomeViewState extends State<HomeView> {
             label: 'Crear Post',
           ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.chat),
-              label: 'Chats',
+            icon: Icon(Icons.chat),
+            label: 'Chats',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.account_box),

@@ -31,7 +31,7 @@ class _TuPerfilState extends State<TuPerfil> {
 
   void onMasDatosPostPropio(BuildContext context, FbPost postSeleccionado) {
     DataHolder().fbPostSelected = postSeleccionado;
-    Navigator.of(context).pushNamed('/postdetails');
+    Navigator.of(context).pushNamed('/postdetailspropio');
   }
 
   Widget _buildPostPropiosScreen() {

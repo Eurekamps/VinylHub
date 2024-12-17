@@ -8,17 +8,17 @@ import 'package:hijos_de_fluttarkia/FbObjects/FbFavorito.dart';
 import '../Singletone/DataHolder.dart';
 import 'ChatView.dart';
 
-class PostDetails extends StatefulWidget{
+class PostDetailsPropio extends StatefulWidget{
 
   final Function() onClose;
 
-  PostDetails({super.key,required this.onClose});
+  PostDetailsPropio({super.key,required this.onClose});
 
   @override
-  State<PostDetails> createState() => _PostDetailsState();
+  State<PostDetailsPropio> createState() => _PostDetailsPropioState();
 }
 
-class _PostDetailsState extends State<PostDetails> {
+class _PostDetailsPropioState extends State<PostDetailsPropio> {
   int currentIndex = 0; // Índice de la imagen actual
   late PageController _pageController;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -144,7 +144,7 @@ class _PostDetailsState extends State<PostDetails> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ElevatedButton.icon(onPressed: (){},icon: const Icon(Icons.favorite), label: Text("Chat"),)
+                  ElevatedButton.icon(onPressed: (){},icon: const Icon(Icons.edit), label: Text("Editar post"),)
                 ],
               )
             ],
