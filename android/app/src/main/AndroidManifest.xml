@@ -2,6 +2,7 @@
     package="com.example.fluttarkia.hijos_de_fluttarkia">
 
     <!-- Permisos necesarios -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -12,6 +13,7 @@
         android:required="false" />
 
     <application
+        android:usesCleartextTraffic="true" <!-- Permitir tráfico HTTP -->
         android:label="hijos_de_fluttarkia"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

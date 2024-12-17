@@ -60,13 +60,22 @@ class _SearchVinylPageState extends State<SearchVinylPage> {
                     itemBuilder: (context, index) {
                       final item = results[index];
                       return ListTile(
-                        leading: item['cover_image'] != null
-                            ? Image.network(item['cover_image'])
-                            : null,
+                        leading: item['cover_image'] != null && item['cover_image'].isNotEmpty
+                            ? Image.network(
+                          item['cover_image'],
+                          width: 100, // Ancho fijo
+                          height: 100, // Alto fijo
+                          fit: BoxFit.cover, // Ajustar la imagen al contenedor
+                          errorBuilder: (context, error, stackTrace) {
+                            // Muestra un ícono o imagen predeterminada si la URL no carga
+                            return Icon(Icons.broken_image, size: 50, color: Colors.grey);
+                          },
+                        )
+                            : Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
                         title: Text(item['title'] ?? "Sin título"),
-                        subtitle: Text(
-                            item['year']?.toString() ?? "Año desconocido"),
+                        subtitle: Text(item['year']?.toString() ?? "Año desconocido"),
                       );
+                      ;
                     },
                   );
                 },
