@@ -25,6 +25,7 @@ dependencies:
   image: ^4.0.15
 
   cupertino_icons: ^1.0.8
+  firebase_remote_config: ^5.2.0
 
 
 dev_dependencies:
