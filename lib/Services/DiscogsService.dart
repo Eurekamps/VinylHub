@@ -7,18 +7,27 @@ class DiscogsService {
   final String consumerSecret = "nuSqSRSQlKmMJAKfjbzpqEVBTFxTYyxA";
 
   // Método para buscar vinilos
-  Future<List<dynamic>> searchVinyl(String query) async {
+  Future<List<Map<String, dynamic>>> searchVinyl(String query) async {
     final url = Uri.parse(
-        "${baseUrl}database/search?q=$query&key=$consumerKey&secret=$consumerSecret");
+        "${baseUrl}database/search?q=$query&type=release&key=$consumerKey&secret=$consumerSecret");
 
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        // Asegúrate de que 'results' exista y sea una lista
+
+        // Verificar si 'results' existe y es una lista
         if (data['results'] is List) {
-          return data['results'];
+          // Mapear los resultados a un formato más usable
+          return (data['results'] as List).map((item) {
+            return {
+              'title': item['title'] ?? 'Sin título',
+              'year': item['year'] ?? 'Año desconocido',
+              'genre': item['genre'] ?? [],
+              'style': item['style'] ?? []
+            };
+          }).toList();
         } else {
           throw Exception("La clave 'results' no contiene una lista válida.");
         }
@@ -30,5 +39,6 @@ class DiscogsService {
       throw Exception("Error al conectar con la API: $e");
     }
   }
+
 
 }

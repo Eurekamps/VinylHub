@@ -7,6 +7,7 @@ import 'package:hijos_de_fluttarkia/Views/TuPerfil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // Para convertir la imagen a base64
 import 'dart:typed_data'; // Para trabajar con bytes de la imagen
+import 'package:image/image.dart' as img;
 import '../FbObjects/FbPost.dart';
 import '../Services/DiscogsService.dart';
 import '../Singletone/DataHolder.dart';
@@ -24,7 +25,8 @@ class _HomeViewState extends State<HomeView> {
   final TextEditingController _tituloController = TextEditingController();
   final TextEditingController _descripcionController = TextEditingController();
   final TextEditingController _precioController = TextEditingController();
-
+  final TextEditingController _artistaController= TextEditingController();
+  final TextEditingController _anioEdicionController= TextEditingController();
   List<String> _imagenURLs = [];
   List<String> _categoriasSeleccionadas = [];
   final ImagePicker _picker = ImagePicker();
@@ -79,16 +81,6 @@ class _HomeViewState extends State<HomeView> {
     });
   }
 
-  Future<String?> _convertirImagenABase64(XFile imagen) async {
-    try {
-      final bytes = await imagen.readAsBytes();
-      return "data:image/jpeg;base64,${base64Encode(bytes)}";
-    } catch (e) {
-      print("Error al convertir imagen a base64: $e");
-      return null;
-    }
-  }
-
   Future<void> _seleccionarImagenDesdeGaleria() async {
     final XFile? imagen = await _picker.pickImage(source: ImageSource.gallery);
     if (imagen != null) {
@@ -113,6 +105,27 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
+  Future<String?> _convertirImagenABase64(XFile imagen) async {
+    try {
+      final bytes = await imagen.readAsBytes();
+
+      // Redimensionar la imagen si es demasiado grande
+      final img.Image? image = img.decodeImage(Uint8List.fromList(bytes));
+      if (image != null) {
+        // Redimensionar a un tamaño más pequeño
+        final resizedImage = img.copyResize(image, width: 800);  // Redimensiona la imagen a 800px de ancho
+        final resizedBytes = Uint8List.fromList(img.encodeJpg(resizedImage));  // Vuelve a convertir a JPEG
+        return "data:image/jpeg;base64,${base64Encode(resizedBytes)}";
+      } else {
+        print("Error al decodificar la imagen");
+        return null;
+      }
+    } catch (e) {
+      print("Error al convertir imagen a base64: $e");
+      return null;
+    }
+  }
+
   void _eliminarImagen(int index) {
     setState(() {
       _imagenURLs.removeAt(index);
@@ -122,6 +135,8 @@ class _HomeViewState extends State<HomeView> {
   Future<void> _agregarPost() async {
     String titulo = _tituloController.text.trim();
     String descripcion = _descripcionController.text.trim();
+    String artista = _artistaController.text.trim();
+    int anio = int.tryParse(_anioEdicionController.text.trim()) ?? 0;
     int precio = int.tryParse(_precioController.text.trim()) ?? 0;
     String uid = FirebaseFirestore.instance.collection('Posts').doc().id;
 
@@ -143,6 +158,8 @@ class _HomeViewState extends State<HomeView> {
     FbPost nuevaPost = FbPost(
         titulo: titulo,
         descripcion: descripcion,
+        artista: artista,
+        anio: anio,
         precio: precio,
         imagenURLpost: _imagenURLs,
         categoria: _categoriasSeleccionadas,
@@ -200,12 +217,24 @@ class _HomeViewState extends State<HomeView> {
   }
 
   // Función para manejar la selección de un vinilo y autocompletar el título
-  void _onSuggestionTap(String title) {
-    _tituloController.text = title;
+  void _onSuggestionTap(Map<String, dynamic> item) {
     setState(() {
-      _results = [];
+      //autocompleta el titulo
+      _tituloController.text = item['title'] ?? 'Sin título';
+
+      //autocompleta cateogira musical
+      final categorias = item['genre'] ?? [];
+      for (var categoria in categorias) {
+        if (!_categoriasSeleccionadas.contains(categoria)) {
+          _categoriasSeleccionadas.add(categoria);
+        }
+      }
+
+      //autocompleta el año de la edicion
+      _anioEdicionController.text = item['year']?.toString() ?? '';
     });
   }
+
 
   Widget _buildListScreen() {
     return StreamBuilder<QuerySnapshot>(
@@ -349,115 +378,217 @@ class _HomeViewState extends State<HomeView> {
 
 
   Widget _buildCreatePostScreen() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Campo de Título con búsqueda de vinilos
-          TextField(
-            controller: _tituloController,
-            decoration: InputDecoration(labelText: 'Título del disco'),
-            onChanged: (text) {
-              _searchVinyls(text);
-            },
-          ),
-
-          // Sugerencias de vinilos cuando existen resultados de búsqueda
-          if (_results.isNotEmpty)
-            Container(
-              height: 200,
-              child: ListView.builder(
-                itemCount: _results.length,
-                itemBuilder: (context, index) {
-                  final item = _results[index];
-                  return ListTile(
-                    title: Text(item['title'] ?? 'Sin título'),
-                    subtitle: Text(item['year'] ?? 'Año desconocido'),
-                    onTap: () => _onSuggestionTap(item['title'] ?? ''),
-                  );
-                },
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Campo de título del disco con búsqueda
+            TextField(
+              controller: _tituloController,
+              decoration: InputDecoration(
+                labelText: 'Título del disco',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                prefixIcon: Icon(Icons.album),
               ),
-            ),
-
-          // Otros campos como descripción, precio, etc.
-          TextField(
-            controller: _descripcionController,
-            decoration: InputDecoration(labelText: 'Descripción'),
-          ),
-          TextField(
-            controller: _precioController,
-            decoration: InputDecoration(labelText: 'Precio'),
-          ),
-
-          // Selección de categorías
-          DropdownButtonFormField<String>(
-            items: ['Rock', 'Pop', 'R&B','Hip-Hop', 'Soul', 'Clásica','Heavy Metal', 'Jazz', 'Neo Soul']
-                .map((categoria) => DropdownMenuItem(
-              value: categoria,
-              child: Text(categoria),
-            ))
-                .toList(),
-            onChanged: (value) {
-              if (value != null && !_categoriasSeleccionadas.contains(value)) {
+              onChanged: (text) {
+                _searchVinyls(text); // Búsqueda de vinilos
                 setState(() {
-                  _categoriasSeleccionadas.add(value);
-                });
-              }
-            },
-            decoration: InputDecoration(labelText: 'Selecciona una categoría'),
-          ),
-          Wrap(
-            children: _categoriasSeleccionadas
-                .map((categoria) => Chip(
-              label: Text(categoria),
-              onDeleted: () {
-                setState(() {
-                  _categoriasSeleccionadas.remove(categoria);
+                  // Limpiar las categorías cuando se cambie el título
+                  _categoriasSeleccionadas.clear();
                 });
               },
-            ))
-                .toList(),
-          ),
+            ),
 
-          // Botones de galería y cámara
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton.icon(
-                onPressed: _seleccionarImagenDesdeGaleria,
-                icon: Icon(Icons.photo_library),
-                label: Text("Galería"),
+            const SizedBox(height: 10),
+
+            // Campo del artista con autocompletar
+            TextField(
+              controller: _artistaController,
+              decoration: InputDecoration(
+                labelText: 'Artista',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                prefixIcon: Icon(Icons.person),
               ),
-              ElevatedButton.icon(
-                onPressed: _capturarImagenDesdeCamara,
-                icon: Icon(Icons.camera_alt),
-                label: Text("Cámara"),
+            ),
+            const SizedBox(height: 10),
+
+            // Mostrar sugerencias de vinilos
+            if (_results.isNotEmpty)
+              Container(
+                constraints: BoxConstraints(maxHeight: 200),
+                child: ListView.builder(
+                  itemCount: _results.length,
+                  itemBuilder: (context, index) {
+                    final item = _results[index];
+                    return ListTile(
+                      title: Text(item['title'] ?? 'Sin título'),
+                      subtitle: Text('Año: ${item['year'] ?? 'Año desconocido'}'),
+                      onTap: () {
+                        setState(() {
+                          // Autocompletar los campos con los valores de la sugerencia
+                          _tituloController.text = item['title'] ?? '';
+                          _artistaController.text = _separarArtista(item['title'] ?? ''); //unica forma de extraer el artista del titulo
+                          _anioEdicionController.text = item['year'] ?? '';
+
+                          // Autocompletar categoría con el género si existe
+                          final genre = item['genre']?.isNotEmpty == true ? item['genre'][0] : null;
+                          if (genre != null && !_categoriasSeleccionadas.contains(genre)) {
+                            _categoriasSeleccionadas.add(genre);
+                          }
+
+                          _results.clear(); // Limpiar las sugerencias al seleccionar
+                        });
+                      },
+                    );
+                  },
+                ),
               ),
-            ],
-          ),
-          SizedBox(height: 10),
-          if (_imagenURLs.isNotEmpty)
+            const SizedBox(height: 10),
+
+            // Campo de año de edición
+            TextField(
+              controller: _anioEdicionController,
+              decoration: InputDecoration(
+                labelText: 'Año de edición',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                prefixIcon: Icon(Icons.date_range),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Campo de descripción
+            TextField(
+              controller: _descripcionController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Descripción',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                prefixIcon: Icon(Icons.description),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Campo de precio
+            TextField(
+              controller: _precioController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Precio',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                prefixIcon: Icon(Icons.euro),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Selección de categorías
+            DropdownButtonFormField<String>(
+              items: [
+                'Rock', 'Pop', 'R&B', 'Hip-Hop', 'Soul', 'Clásica',
+                'Heavy Metal', 'Jazz', 'Neo Soul', 'Blues', 'Folk',
+                'Reggae', 'Country', 'Electrónica', 'Punk', 'Funk',
+                'Disco', 'Indie', 'Latino', 'Gospel', 'Experimental',
+                'House', 'Techno', 'Ambient', 'Trance', 'Ska'
+              ].map((categoria) => DropdownMenuItem(
+                value: categoria,
+                child: Text(categoria),
+              )).toList(),
+              onChanged: (value) {
+                if (value != null && !_categoriasSeleccionadas.contains(value)) {
+                  setState(() {
+                    _categoriasSeleccionadas.add(value);
+                  });
+                }
+              },
+              decoration: InputDecoration(
+                labelText: 'Categoría',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                prefixIcon: Icon(Icons.category),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // Mostrar categorías seleccionadas
             Wrap(
               spacing: 8.0,
-              children: _imagenURLs.map((image) {
+              children: _categoriasSeleccionadas.map((categoria) {
                 return Chip(
-                  label: Text('Imagen cargada'),
+                  label: Text(categoria),
                   onDeleted: () {
-                    _eliminarImagen(_imagenURLs.indexOf(image));
+                    setState(() {
+                      _categoriasSeleccionadas.remove(categoria);
+                    });
                   },
                 );
               }).toList(),
             ),
-          SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: _agregarPost,
-            child: Text('Crear Post'),
-          ),
-        ],
+            const SizedBox(height: 10),
+
+            // Botones para galería y cámara
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _seleccionarImagenDesdeGaleria,
+                  icon: Icon(Icons.photo_library),
+                  label: Text("Galería"),
+                ),
+                ElevatedButton.icon(
+                  onPressed: _capturarImagenDesdeCamara,
+                  icon: Icon(Icons.camera_alt),
+                  label: Text("Cámara"),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Imágenes seleccionadas
+            if (_imagenURLs.isNotEmpty)
+              Wrap(
+                spacing: 8.0,
+                children: _imagenURLs.map((image) {
+                  return Chip(
+                    label: Text('Imagen cargada'),
+                    onDeleted: () {
+                      _eliminarImagen(_imagenURLs.indexOf(image));
+                    },
+                  );
+                }).toList(),
+              ),
+            const SizedBox(height: 10),
+
+            // Botón para crear el post
+            Center(
+              child: ElevatedButton(
+                onPressed: _agregarPost,
+                child: Text('Crear Post'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+//funcion para extraer el nombre del artista del titulo del disco
+  String _separarArtista(String title) {
+    final parts = title.split(' - ');
+    return parts.isNotEmpty ? parts[0] : ''; //extrae todo lo que esta antes del guion
+  }
+
 
   Widget _buildPantallaChats() {
     return Scaffold(

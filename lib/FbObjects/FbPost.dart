@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class FbPost {
   final String titulo;
   final String descripcion;
+  final String artista;
+  final int anio;
   final int precio;
   final List<String> imagenURLpost; // Lista de URLs de imágenes
   final List<String> categoria;    // Lista de categorías
@@ -12,6 +14,8 @@ class FbPost {
   FbPost({
     required this.titulo,
     required this.descripcion,
+    required this.artista,
+    required this.anio,
     required this.precio,
     required this.imagenURLpost,
     required this.categoria,
@@ -23,6 +27,8 @@ class FbPost {
     return {
       'titulo': titulo,
       'descripcion': descripcion,
+      'artista': artista,
+      'anio': anio,
       'precio': precio,
       'imagenURLpost': imagenURLpost, // Guardar como lista
       'categoria': categoria,         // Guardar como lista
@@ -37,6 +43,8 @@ class FbPost {
     return FbPost(
       titulo: data['titulo'] ?? '',
       descripcion: data['descripcion'] ?? '',
+      artista: data['artista'] ?? '',
+      anio: data['anio'] ?? 0,
       precio: data['precio'] ?? 0,
       imagenURLpost: List<String>.from(data['imagenURLpost'] ?? []),
       categoria: List<String>.from(data['categoria'] ?? []),
@@ -50,6 +58,8 @@ class FbPost {
     return FbPost(
       titulo: json['titulo'],
       descripcion: json['descripcion'],
+      artista: json['artista'],
+      anio: json['anio'],
       precio: json['precio'],
       imagenURLpost: List<String>.from(json['imagenURLpost']),
       categoria: List<String>.from(json['categoria']),
