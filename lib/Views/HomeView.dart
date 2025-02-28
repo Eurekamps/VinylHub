@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
@@ -84,10 +85,10 @@ class _HomeViewState extends State<HomeView> {
   Future<void> _seleccionarImagenDesdeGaleria() async {
     final XFile? imagen = await _picker.pickImage(source: ImageSource.gallery);
     if (imagen != null) {
-      final base64String = await _convertirImagenABase64(imagen);
-      if (base64String != null) {
+      final url = await _subirImagenAFirebase(imagen);  // Esto sigue funcionando
+      if (url != null) {
         setState(() {
-          _imagenURLs.add(base64String);
+          _imagenURLs.add(url); // Guarda la URL obtenida, no el XFile
         });
       }
     }
@@ -96,40 +97,31 @@ class _HomeViewState extends State<HomeView> {
   Future<void> _capturarImagenDesdeCamara() async {
     final XFile? imagen = await _picker.pickImage(source: ImageSource.camera);
     if (imagen != null) {
-      final base64String = await _convertirImagenABase64(imagen);
-      if (base64String != null) {
+      final url = await _subirImagenAFirebase(imagen);  // Esto sigue funcionando
+      if (url != null) {
         setState(() {
-          _imagenURLs.add(base64String);
+          _imagenURLs.add(url); // Guarda la URL obtenida, no el XFile
         });
       }
     }
   }
 
-  Future<String?> _convertirImagenABase64(XFile imagen) async {
+  Future<String?> _subirImagenAFirebase(XFile imagen) async {
     try {
-      final bytes = await imagen.readAsBytes();
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      final storageReference = FirebaseStorage.instance.ref().child('imagenes/$fileName');
 
-      // Redimensionar la imagen si es demasiado grande
-      final img.Image? image = img.decodeImage(Uint8List.fromList(bytes));
-      if (image != null) {
-        // Redimensionar a un tamaño más pequeño
-        final resizedImage = img.copyResize(image, width: 800);  // Redimensiona la imagen a 800px de ancho
-        final resizedBytes = Uint8List.fromList(img.encodeJpg(resizedImage));  // Vuelve a convertir a JPEG
-        return "data:image/jpeg;base64,${base64Encode(resizedBytes)}";
-      } else {
-        print("Error al decodificar la imagen");
-        return null;
-      }
+      // Subir archivo XFile a Firebase Storage
+      final uploadTask = storageReference.putFile(File(imagen.path));
+      final snapshot = await uploadTask.whenComplete(() => null);
+
+      // Obtener la URL de la imagen subida
+      final url = await snapshot.ref.getDownloadURL();
+      return url;
     } catch (e) {
-      print("Error al convertir imagen a base64: $e");
+      print("Error al subir la imagen a Firebase: $e");
       return null;
     }
-  }
-
-  void _eliminarImagen(int index) {
-    setState(() {
-      _imagenURLs.removeAt(index);
-    });
   }
 
   Future<void> _agregarPost() async {
@@ -140,6 +132,7 @@ class _HomeViewState extends State<HomeView> {
     int precio = int.tryParse(_precioController.text.trim()) ?? 0;
     String uid = FirebaseFirestore.instance.collection('Posts').doc().id;
 
+    // Validaciones
     if (titulo.isEmpty || descripcion.isEmpty) {
       print("Error: Título o descripción vacíos");
       return;
@@ -155,27 +148,37 @@ class _HomeViewState extends State<HomeView> {
       return;
     }
 
+    // Crear el post con las URLs de las imágenes subidas (ya almacenadas en _imagenURLs)
     FbPost nuevaPost = FbPost(
-        titulo: titulo,
-        descripcion: descripcion,
-        artista: artista,
-        anio: anio,
-        precio: precio,
-        imagenURLpost: _imagenURLs,
-        categoria: _categoriasSeleccionadas,
-        uid: uid,
-        sAutorUid: FirebaseAuth.instance.currentUser!.uid
+      titulo: titulo,
+      descripcion: descripcion,
+      artista: artista,
+      anio: anio,
+      precio: precio,
+      imagenURLpost: _imagenURLs,  // Utilizar las URLs de las imágenes
+      categoria: _categoriasSeleccionadas,
+      uid: uid,
+      sAutorUid: FirebaseAuth.instance.currentUser!.uid,
     );
 
+    // Agregar el post a Firestore
     await _firestore.collection('Posts').add(nuevaPost.toMap());
     print("Post creado: ${nuevaPost.toMap()}");
 
+    // Limpiar el formulario
     setState(() {
       _tituloController.clear();
       _descripcionController.clear();
       _precioController.clear();
       _imagenURLs.clear();
       _categoriasSeleccionadas.clear();
+    });
+  }
+
+
+  void _eliminarImagen(int index) {
+    setState(() {
+      _imagenURLs.removeAt(index);
     });
   }
 
@@ -246,7 +249,7 @@ class _HomeViewState extends State<HomeView> {
 
         final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
 
-        //consulta para asignar los posts creados por otros usuarios
+        // Consulta para asignar los posts creados por otros usuarios
         var posts = snapshot.data!.docs
             .map((doc) => FbPost.fromFirestore(doc))
             .where((post) => post.sAutorUid != currentUserUid)
@@ -261,16 +264,57 @@ class _HomeViewState extends State<HomeView> {
               onTap: () => onPostItem_MasDatosClicked(context, post),
               child: Card(
                 margin: EdgeInsets.all(8),
-                child: ListTile(
-                  title: Text(post.titulo),
-                  subtitle: Text('Categorías: ${post.categoria.join(', ')}'),
-                  trailing: post.imagenURLpost.isNotEmpty
-                      ? Image.memory(
-                    base64Decode(_limpiarBase64(post.imagenURLpost.first)),
-                    width: 150,
-                    height: 150,
-                  )
-                      : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0), // Espaciado interno
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start, // Alineación del contenido a la izquierda
+                    children: [
+                      if (post.imagenURLpost.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10), // Redondea la imagen
+                          child: AspectRatio(
+                            aspectRatio: 1.5, // Relación de aspecto fija (ancho/alto)
+                            child: Image.network(
+                              post.imagenURLpost.first, // Usamos la URL directamente
+                              fit: BoxFit.contain, // Muestra toda la imagen dentro del área sin recortarla
+                            ),
+                          ),
+                        )
+                      else
+                        AspectRatio(
+                          aspectRatio: 1.5, // Relación de aspecto para imágenes no disponibles
+                          child: Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      SizedBox(height: 8), // Espaciado entre la imagen y el título
+                      Text(
+                        post.titulo,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(height: 4), // Espaciado entre el título y la categoría
+                      Text(
+                        'Categorías: ${post.categoria.join(', ')}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Precio: ${post.precio.toString()} €',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      SizedBox(height: 8), // Espaciado entre el precio y el final del Card
+                    ],
+                  ),
                 ),
               ),
             );
@@ -279,6 +323,7 @@ class _HomeViewState extends State<HomeView> {
       },
     );
   }
+
 
 
   Widget _buildGridScreen() {
@@ -291,7 +336,7 @@ class _HomeViewState extends State<HomeView> {
 
         final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
 
-        //consulta para asignar los posts creados por otros usuarios
+        // Consulta para asignar los posts creados por otros usuarios
         var posts = snapshot.data!.docs
             .map((doc) => FbPost.fromFirestore(doc))
             .where((post) => post.sAutorUid != currentUserUid)
@@ -325,8 +370,8 @@ class _HomeViewState extends State<HomeView> {
                           borderRadius: BorderRadius.circular(10), // Redondea la imagen
                           child: AspectRatio(
                             aspectRatio: 1.5, // Relación de aspecto fija (ancho/alto)
-                            child: Image.memory(
-                              base64Decode(_limpiarBase64(post.imagenURLpost.first)),
+                            child: Image.network(
+                              post.imagenURLpost.first, // Usamos la URL directamente
                               fit: BoxFit.contain, // Muestra toda la imagen dentro del área sin recortarla
                             ),
                           ),
@@ -343,13 +388,15 @@ class _HomeViewState extends State<HomeView> {
                           ),
                         ),
                       SizedBox(height: 8), // Espaciado entre la imagen y el título
-                      Text(
-                        post.titulo,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      Expanded( // Usa Expanded para permitir que el texto se ajuste al espacio disponible
+                        child: Text(
+                          post.titulo,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                       SizedBox(height: 4), // Espaciado entre el título y la categoría
                       Text(
@@ -375,6 +422,7 @@ class _HomeViewState extends State<HomeView> {
       },
     );
   }
+
 
 
   Widget _buildCreatePostScreen() {

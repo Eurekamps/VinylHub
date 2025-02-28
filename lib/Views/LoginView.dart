@@ -17,10 +17,9 @@ class LoginView extends StatefulWidget{
 
 class _LoginViewState extends State<LoginView> {
 
-  TextEditingController tecUser= TextEditingController();
-  TextEditingController tecPass= TextEditingController();
-
-
+  TextEditingController tecUser = TextEditingController();
+  TextEditingController tecPass = TextEditingController();
+  bool obscureText = true; // Variable para ocultar/mostrar la contraseña
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +68,7 @@ class _LoginViewState extends State<LoginView> {
                 SizedBox(height: 20),
                 TextFormField(
                   controller: tecPass,
+                  obscureText: obscureText, // Controla si la contraseña está oculta o visible
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
                     labelStyle: TextStyle(color: Colors.black),
@@ -79,6 +79,17 @@ class _LoginViewState extends State<LoginView> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.black),
                     ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.black,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureText = !obscureText; // Alterna entre ocultar y mostrar
+                        });
+                      },
+                    ),
                   ),
                 ),
                 SizedBox(height: 20),
@@ -88,19 +99,18 @@ class _LoginViewState extends State<LoginView> {
                     VinylBoton(
                       sTitulo: "Login",
                       color: Colors.brown,
-                      onBotonVinylPressed: () async{
+                      onBotonVinylPressed: () async {
                         await FirebaseAdmin().clickLogin(
-                          email: tecUser.text,
-                          password: tecPass.text,
-                          context: context
-
+                            email: tecUser.text,
+                            password: tecPass.text,
+                            context: context
                         );
-                    },
+                      },
                     ),
                     VinylBoton(
                       sTitulo: "Registro",
                       color: Colors.brown,
-                      onBotonVinylPressed: () {Navigator.of(context).pushNamed('/registerview');},
+                      onBotonVinylPressed: () { Navigator.of(context).pushNamed('/registerview'); },
                     ),
                   ],
                 ),
@@ -110,6 +120,5 @@ class _LoginViewState extends State<LoginView> {
         ),
       ),
     );
-
   }
 }

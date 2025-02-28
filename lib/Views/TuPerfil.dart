@@ -28,7 +28,6 @@ class _TuPerfilState extends State<TuPerfil> {
     });
   }
 
-
   void onMasDatosPostPropio(BuildContext context, FbPost postSeleccionado) {
     DataHolder().fbPostSelected = postSeleccionado;
     Navigator.of(context).pushNamed('/postdetailspropio');
@@ -78,7 +77,7 @@ class _TuPerfilState extends State<TuPerfil> {
                 ),
                 elevation: 4,
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(4.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -87,8 +86,8 @@ class _TuPerfilState extends State<TuPerfil> {
                           borderRadius: BorderRadius.circular(10),
                           child: AspectRatio(
                             aspectRatio: 1.5,
-                            child: Image.memory(
-                              base64Decode(DataHolder().limpiarBase64(post.imagenURLpost.first)),
+                            child: Image.network(
+                              post.imagenURLpost.first, // Usamos la URL directamente
                               fit: BoxFit.contain,
                             ),
                           ),
@@ -157,7 +156,6 @@ class _TuPerfilState extends State<TuPerfil> {
           DataHolder().miPerfil?.nombre ?? "Usuario", // Accede al nombre de miPerfil
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
-
         Text(
           currentUser?.email ?? "Email no disponible",
           style: TextStyle(fontSize: 16, color: Colors.grey[600]),

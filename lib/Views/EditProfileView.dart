@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:html' as html;
+//import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -30,41 +30,7 @@ class _EditProfileViewState extends State<EditProfileView> {
     _cargarPerfil();
   }
 
-  Future<void> _pickAvatar() async {
-    if (kIsWeb) {
-      final completer = Completer<Uint8List>();
-      final uploadInput = html.FileUploadInputElement();
-      uploadInput.accept = 'image/*';
-      uploadInput.click();
 
-      uploadInput.onChange.listen((e) {
-        final files = uploadInput.files;
-        if (files!.isNotEmpty) {
-          final reader = html.FileReader();
-          reader.readAsArrayBuffer(files[0]);
-          reader.onLoadEnd.listen((e) {
-            completer.complete(reader.result as Uint8List);
-          });
-        } else {
-          completer.complete(null);
-        }
-      });
-
-      final image = await completer.future;
-      if (image != null) {
-        setState(() {
-          _avatar = image;
-        });
-      }
-    } else {
-      final pickedImage = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedImage != null) {
-        setState(() {
-          _avatar = File(pickedImage.path);
-        });
-      }
-    }
-  }
 
   Future<void> _cargarPerfil() async {
     await DataHolder().obtenerPerfilDeFirestore(FirebaseAuth.instance.currentUser!.uid);
@@ -94,7 +60,7 @@ class _EditProfileViewState extends State<EditProfileView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             GestureDetector(
-              onTap: _pickAvatar,
+              //onTap: _pickAvatar,
               child: CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.grey[300],

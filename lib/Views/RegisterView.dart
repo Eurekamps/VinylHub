@@ -14,9 +14,10 @@ class RegisterView extends StatefulWidget{
 
 class _RegisterViewState extends State<RegisterView> {
 
-  TextEditingController tecEmail= TextEditingController();
-  TextEditingController tecPass= TextEditingController();
-  TextEditingController tecPassRepeat= TextEditingController();
+  TextEditingController tecEmail = TextEditingController();
+  TextEditingController tecPass = TextEditingController();
+  TextEditingController tecPassRepeat = TextEditingController();
+  bool obscureText = true; // Variable para ocultar/mostrar contraseña
 
   void clickRegistrar(BuildContext context) async {
     if (tecPass.text == tecPassRepeat.text) {
@@ -93,7 +94,6 @@ class _RegisterViewState extends State<RegisterView> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -141,6 +141,7 @@ class _RegisterViewState extends State<RegisterView> {
                 SizedBox(height: 20),
                 TextFormField(
                   controller: tecPass,
+                  obscureText: obscureText, // Controla si la contraseña está oculta o visible
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
                     labelStyle: TextStyle(color: Colors.black),
@@ -151,11 +152,23 @@ class _RegisterViewState extends State<RegisterView> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide(color: Colors.black),
                     ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureText ? Icons.visibility_off : Icons.visibility,
+                        color: Colors.black,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureText = !obscureText; // Alterna entre ocultar y mostrar
+                        });
+                      },
+                    ),
                   ),
                 ),
                 SizedBox(height: 20),
                 TextFormField(
                   controller: tecPassRepeat,
+                  obscureText: true, // Siempre oculto para la confirmación de contraseña
                   decoration: InputDecoration(
                     labelText: 'Confirmar contraseña',
                     labelStyle: TextStyle(color: Colors.black),
@@ -185,6 +198,5 @@ class _RegisterViewState extends State<RegisterView> {
         ),
       ),
     );
-
   }
 }

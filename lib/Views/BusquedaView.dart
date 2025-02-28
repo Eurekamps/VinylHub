@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,8 +11,8 @@ class BusquedaView extends StatefulWidget {
 
 class _BusquedaViewState extends State<BusquedaView> {
   final TextEditingController _controller = TextEditingController();
-  List<FbPost> _allPosts = [];  //almacena todos los post
-  List<FbPost> _filteredPosts = [];  //almacena los post filtrados
+  List<FbPost> _allPosts = [];
+  List<FbPost> _filteredPosts = [];
   bool blListaPostsVisible = true;
 
   @override
@@ -23,14 +21,13 @@ class _BusquedaViewState extends State<BusquedaView> {
     _loadPosts();
   }
 
-  // Método para obtener los posts de Firestore.
   void _loadPosts() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('Posts').get();
       final posts = snapshot.docs.map((doc) => FbPost.fromFirestore(doc)).toList();
       setState(() {
         _allPosts = posts;
-        _filteredPosts = posts; //se muestran todos los post al principio
+        _filteredPosts = posts;
       });
     } catch (e) {
       print('Error al cargar los posts: $e');
@@ -40,11 +37,10 @@ class _BusquedaViewState extends State<BusquedaView> {
     }
   }
 
-
   void _filterPosts(String query) {
     if (query.isEmpty) {
       setState(() {
-        _filteredPosts = _allPosts;  //Si no hay texto de busqueda, se muestran todos los post
+        _filteredPosts = _allPosts;
       });
     } else {
       setState(() {
@@ -63,10 +59,8 @@ class _BusquedaViewState extends State<BusquedaView> {
     DataHolder().fbPostSelected = postSeleccionado;
 
     if (postSeleccionado.sAutorUid == currentUserUid) {
-      // Si el post es del usuario logueado, navegar a la pantalla de edición
       Navigator.of(context).pushNamed('/postdetailspropio');
     } else {
-      // Si el post no es del usuario logueado, navegar a la pantalla de detalles
       Navigator.of(context).pushNamed('/postdetails');
     }
 
@@ -74,7 +68,6 @@ class _BusquedaViewState extends State<BusquedaView> {
       blListaPostsVisible = false;
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +78,7 @@ class _BusquedaViewState extends State<BusquedaView> {
           IconButton(
             icon: Icon(Icons.search),
             onPressed: () {
-              _filterPosts(_controller.text);  // Llamamos a la función de búsqueda al presionar el botón.
+              _filterPosts(_controller.text);
             },
           ),
         ],
@@ -100,7 +93,7 @@ class _BusquedaViewState extends State<BusquedaView> {
                 labelText: 'Buscar por título, descripción o categoría...',
                 suffixIcon: Icon(Icons.search),
               ),
-              onChanged: _filterPosts,  // Llamamos a _filterPosts cuando el texto cambia.
+              onChanged: _filterPosts,
             ),
           ),
           Expanded(
@@ -111,7 +104,7 @@ class _BusquedaViewState extends State<BusquedaView> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 8.0,
                 mainAxisSpacing: 8.0,
-                childAspectRatio: 0.8, // Ajusta la proporción para tarjetas verticales
+                childAspectRatio: 0.8,
               ),
               itemCount: _filteredPosts.length,
               itemBuilder: (context, index) {
@@ -121,28 +114,29 @@ class _BusquedaViewState extends State<BusquedaView> {
                   onTap: () => onPostItem_MasDatosClicked(context, post),
                   child: Card(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10), // Bordes redondeados
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    elevation: 4, // Sombra para diseño más llamativo
+                    elevation: 4,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0), // Espaciado interno
+                      padding: const EdgeInsets.all(8.0),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center, // Centrar contenido horizontalmente
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          // Imagen del post usando URL
                           if (post.imagenURLpost.isNotEmpty)
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(10), // Redondea la imagen
+                              borderRadius: BorderRadius.circular(10),
                               child: AspectRatio(
-                                aspectRatio: 1.5, // Relación de aspecto fija (ancho/alto)
-                                child: Image.memory(
-                                  base64Decode(_limpiarBase64(post.imagenURLpost.first)),
-                                  fit: BoxFit.contain, // Muestra toda la imagen dentro del área sin recortarla
+                                aspectRatio: 1.5,
+                                child: Image.network(
+                                  post.imagenURLpost[0], // Muestra la primera URL de imagen
+                                  fit: BoxFit.cover,
                                 ),
                               ),
                             )
                           else
                             AspectRatio(
-                              aspectRatio: 1.5, // Relación de aspecto para imágenes no disponibles
+                              aspectRatio: 1.5,
                               child: Center(
                                 child: Icon(
                                   Icons.image_not_supported,
@@ -151,7 +145,7 @@ class _BusquedaViewState extends State<BusquedaView> {
                                 ),
                               ),
                             ),
-                          SizedBox(height: 8), // Espaciado entre la imagen y el título
+                          SizedBox(height: 8),
                           Text(
                             post.titulo,
                             style: TextStyle(
@@ -160,7 +154,7 @@ class _BusquedaViewState extends State<BusquedaView> {
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          SizedBox(height: 4), // Espaciado entre el título y la categoría
+                          SizedBox(height: 4),
                           Text(
                             'Categorías: ${post.categoria.join(', ')}',
                             style: TextStyle(
@@ -185,10 +179,5 @@ class _BusquedaViewState extends State<BusquedaView> {
         ],
       ),
     );
-  }
-
-
-  String _limpiarBase64(String base64String) {
-    return base64String.replaceAll("data:image/png;base64,", "").replaceAll("data:image/jpeg;base64,", "");
   }
 }
