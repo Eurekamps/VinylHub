@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
 import 'package:hijos_de_fluttarkia/Views/FavoritosView.dart';
 import 'package:hijos_de_fluttarkia/Views/TuPerfil.dart';
@@ -811,14 +812,15 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black54,
-        title: const Center(
-          child: Text("VinylHub", style: TextStyle(
-            fontFamily: 'Roboto', // Cambia esto al nombre de la fuente que quieras usar
-            fontWeight: FontWeight.bold, // Negrita
-            fontSize: 22,
-            color: Colors.black,
-          ),
+        backgroundColor: Colors.grey,
+        title: Center(
+          child: Text(
+            "VinylHub",
+            style: GoogleFonts.audiowide(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              color: Colors.black,
+            ),
           ),
         ),
         actions: [

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -11,6 +12,7 @@ class SplashView extends StatefulWidget{
 class _SplashViewState extends State<SplashView> {
 
   double dbPorcentaje=0.0;
+
 
   @override
   void initState() {
@@ -27,7 +29,11 @@ class _SplashViewState extends State<SplashView> {
       });
       await Future.delayed(Duration(milliseconds: 50));
     }
-    Navigator.of(context).pushNamed('/loginview');
+    if(FirebaseAuth.instance.currentUser!=null) {
+      Navigator.of(context).pushNamed('/homeview');
+    }else{
+      Navigator.of(context).pushNamed('/loginview');
+    }
   }
 
   Widget build(BuildContext context) {

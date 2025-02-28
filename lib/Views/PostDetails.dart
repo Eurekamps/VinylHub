@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../FbObjects/FbFavorito.dart';
 import '../Singletone/DataHolder.dart';
@@ -173,40 +174,59 @@ class _PostDetailsState extends State<PostDetails> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(post.titulo),
         leading: IconButton(
           icon: Icon(Icons.close),
           onPressed: () {
             Navigator.pop(context); // Cerrar la pantalla de detalles
           },
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.share),
+            onPressed: () {
+              Share.share(
+                "📀 ${post.titulo}\n💰 ${post.precio} €\n📖 ${post.descripcion ?? "Sin descripción"}",
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
-        child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Carrusel de imágenes
               if (images.isNotEmpty)
                 Container(
-                  height: 300, // Altura fija para las imágenes
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: EdgeInsets.all(8),
                   child: Stack(
                     children: [
-                      PageView.builder(
-                        controller: _pageController,
-                        onPageChanged: (index) {
-                          setState(() {
-                            currentIndex = index;
-                          });
-                        },
-                        itemCount: images.length,
-                        itemBuilder: (context, index) {
-                          return Image.network(
-                            images[index],
-                            fit: BoxFit.contain,
-                            width: double.infinity,
-                          );
-                        },
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: SizedBox(
+                          height: 300,
+                          child: PageView.builder(
+                            controller: _pageController,
+                            onPageChanged: (index) {
+                              setState(() {
+                                currentIndex = index;
+                              });
+                            },
+                            itemCount: images.length,
+                            itemBuilder: (context, index) {
+                              return Image.network(
+                                images[index],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              );
+                            },
+                          ),
+                        ),
                       ),
                       Positioned(
                         left: 10,
@@ -228,40 +248,117 @@ class _PostDetailsState extends State<PostDetails> {
                   ),
                 ),
               SizedBox(height: 16),
-              Text(
-                post.titulo,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 4),
+                  ],
+                ),
+                child: Text(
+                  post.titulo,
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
               ),
               SizedBox(height: 16),
-              Text(
-                post.descripcion ?? "Sin descripción",
-                style: TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
+
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 4),
+                  ],
+                ),
+                child: Text(
+                  post.descripcion ?? "Sin descripción",
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
               ),
               SizedBox(height: 16),
+
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 4),
+                  ],
+                ),
+                child: Text(
+                  "${post.precio} €",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[700]),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: 24),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton.icon(
                     onPressed: crearNuevoChat,
-                    icon: const Icon(Icons.chat),
-                    label: Text("Chat"),
+                    icon: Icon(Icons.chat, color: Colors.white),
+                    label: Text("Chat", style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
+                  SizedBox(width: 16),
                   ElevatedButton.icon(
                     onPressed: addPostFavoritos,
                     icon: Icon(
                       _isFavorito ? Icons.favorite : Icons.favorite_border,
-                      color: _isFavorito ? Colors.red : null,
+                      color: Colors.white,
                     ),
-                    label: Text(_isFavorito ? "Favorito" : "Añadir Favoritos"),
+                    label: Text(
+                      _isFavorito ? "Eliminar" : "Añadir",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isFavorito ? Colors.red : Colors.grey,
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
+                  SizedBox(width: 16),
                 ],
               ),
             ],
           ),
         ),
       ),
+      // Botón de comprar fijo abajo
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Colors.black12, width: 1)), // Línea superior para separar
+        ),
+        child: ElevatedButton.icon(
+          onPressed: () {
+            // Acción al presionar el botón de comprar
+          },
+          icon: Icon(Icons.shopping_cart),
+          label: Text("Comprar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ),
     );
   }
+
 }

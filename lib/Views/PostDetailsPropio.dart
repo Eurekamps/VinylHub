@@ -80,77 +80,132 @@ class _PostDetailsPropioState extends State<PostDetailsPropio> {
         ),
       ),
       body: SingleChildScrollView(
-        child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Carrusel de imágenes
+              // Carrusel de imágenes con diseño mejorado
               if (images.isNotEmpty)
                 Container(
-                  height: 300, // Altura fija para las imágenes
-                  child: Stack(
-                    children: [
-                      // Página de imágenes
-                      PageView.builder(
-                        controller: _pageController,
-                        onPageChanged: (index) {
-                          setState(() {
-                            currentIndex = index;
-                          });
-                        },
-                        itemCount: images.length,
-                        itemBuilder: (context, index) {
-                          return Image.network(
-                            images[index],
-                            fit: BoxFit.contain, // Ajuste correcto
-                            width: double.infinity,
-                          );
-                        },
-                      ),
-                      // Flecha izquierda
-                      Positioned(
-                        left: 10,
-                        top: 130,
-                        child: IconButton(
-                          icon: Icon(Icons.arrow_back, size: 30, color: Colors.black),
-                          onPressed: currentIndex > 0 ? _previousImage : null,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: EdgeInsets.all(8),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      children: [
+                        SizedBox(
+                          height: 300,
+                          child: PageView.builder(
+                            controller: _pageController,
+                            onPageChanged: (index) {
+                              setState(() {
+                                currentIndex = index;
+                              });
+                            },
+                            itemCount: images.length,
+                            itemBuilder: (context, index) {
+                              return Image.network(
+                                images[index],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                      // Flecha derecha
-                      Positioned(
-                        right: 10,
-                        top: 130,
-                        child: IconButton(
-                          icon: Icon(Icons.arrow_forward, size: 30, color: Colors.black),
-                          onPressed: currentIndex < images.length - 1 ? _nextImage : null,
+                        Positioned(
+                          left: 10,
+                          top: 130,
+                          child: IconButton(
+                            icon: Icon(Icons.arrow_back, size: 30, color: Colors.black),
+                            onPressed: currentIndex > 0 ? _previousImage : null,
+                          ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          right: 10,
+                          top: 130,
+                          child: IconButton(
+                            icon: Icon(Icons.arrow_forward, size: 30, color: Colors.black),
+                            onPressed: currentIndex < images.length - 1 ? _nextImage : null,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               SizedBox(height: 16),
-              Text(
-                post.titulo,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+              // Contenedor para el título
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 4),
+                  ],
+                ),
+                child: Text(
+                  post.titulo,
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
               ),
               SizedBox(height: 16),
-              Text(
-                post.descripcion ?? "Sin descripción",
-                style: TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
+              // Contenedor para la descripción
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 4),
+                  ],
+                ),
+                child: Text(
+                  post.descripcion ?? "Sin descripción",
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              SizedBox(height: 16,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton.icon(onPressed: (){},icon: const Icon(Icons.edit), label: Text("Editar post"),)
-                ],
-              )
+              SizedBox(height: 16),
+              // Contenedor del precio
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green[50],
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 4),
+                  ],
+                ),
+                child: Text(
+                  "${post.precio} €",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[700]),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              SizedBox(height: 24),
+              // Botón con más espacio y mejor diseño
+              ElevatedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.edit),
+                label: Text("Editar"),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  textStyle: TextStyle(fontSize: 16),
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+
 }

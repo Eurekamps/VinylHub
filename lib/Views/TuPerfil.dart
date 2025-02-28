@@ -143,6 +143,7 @@ class _TuPerfilState extends State<TuPerfil> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        SizedBox(height: 15 ,),
         CircleAvatar(
           radius: 50,
           backgroundImage: DataHolder().miPerfil != null &&
@@ -198,12 +199,6 @@ class _TuPerfilState extends State<TuPerfil> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Tu Perfil"),
-        centerTitle: true,
-        backgroundColor: Colors.black54,
-        automaticallyImplyLeading: false,
-      ),
       body: Column(
         children: [
           _buildPerfilDatos(),
