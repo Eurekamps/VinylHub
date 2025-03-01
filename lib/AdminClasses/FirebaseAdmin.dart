@@ -19,9 +19,11 @@ class FirebaseAdmin {
   TextEditingController tecPassRepeat = TextEditingController();
 
 
-  // Iniciar sesión con correo y contraseña
-  Future<void> clickLogin(
-      {required BuildContext context, required String password, required String email}) async {
+  Future<void> clickLogin({
+    required BuildContext context,
+    required String password,
+    required String email,
+  }) async {
     try {
       final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
@@ -42,27 +44,30 @@ class FirebaseAdmin {
       // Obtener el documento del perfil
       final docSnap = await ref.get();
 
-      if (docSnap.exists) {
-        DataHolder().miPerfil = docSnap.data();
-        print("Datos del perfil: ${DataHolder().miPerfil}");
-      } else {
-        print("El documento no existe");
+      if (!docSnap.exists) {
+        print("El documento no existe, redirigiendo a ProfileView...");
         Navigator.of(context).pushNamed('/profileview');
+        return; // Detener ejecución aquí
       }
 
-      if (DataHolder().miPerfil != null &&
-          DataHolder().miPerfil!.nombre.isNotEmpty &&
-          DataHolder().miPerfil!.edad > 0 &&
-          DataHolder().miPerfil!.apodo.isNotEmpty &&
-          DataHolder().miPerfil!.imagenURL.isNotEmpty) {
-        // Redirigir a home si los datos están completos
+      DataHolder().miPerfil = docSnap.data();
+      print("Datos del perfil: ${DataHolder().miPerfil}");
+
+      // Verificar si el perfil está completo
+      final perfil = DataHolder().miPerfil;
+      if (perfil != null &&
+          perfil.nombre.isNotEmpty &&
+          perfil.edad > 0 &&
+          perfil.apodo.isNotEmpty &&
+          perfil.imagenURL.isNotEmpty) {
+        print("Perfil completo, redirigiendo a HomeView...");
         Navigator.of(context).pushNamed('/homeview');
       } else {
-        // Redirigir a perfil para completar los datos
+        print("Perfil incompleto, redirigiendo a ProfileView...");
         Navigator.of(context).pushNamed('/profileview');
       }
     } on FirebaseAuthException catch (e) {
-      // Manejo de excepciones
+      // Manejo de errores de autenticación
       if (e.code == 'user-not-found') {
         print('No user found for that email.');
       } else if (e.code == 'wrong-password') {
@@ -71,11 +76,12 @@ class FirebaseAdmin {
     }
   }
 
+
   Future<void> registrarperfilCompleto({
     required String nombre,
     required int edad,
     required String apodo,
-    dynamic avatar,
+    File? avatar, // Cambiado a File? en lugar de dynamic
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -86,7 +92,7 @@ class FirebaseAdmin {
     String imagenURL = "https://www.example.com/default-profile-image.png";
     if (avatar != null) {
       try {
-        imagenURL = await subirImagen(user.uid);
+        imagenURL = await subirImagen(avatar); // Pasamos el archivo en lugar del UID
         print("Imagen subida correctamente: $imagenURL");
       } catch (e) {
         print("Error al subir la imagen: $e");
@@ -113,6 +119,7 @@ class FirebaseAdmin {
       rethrow;
     }
   }
+
 
 
   // Registrar un nuevo perfil
@@ -176,16 +183,17 @@ class FirebaseAdmin {
     }
   }
 
-  Future<String> subirImagen(dynamic avatar) async {
+  Future<String> subirImagen(File avatar) async {
     try {
-      if (avatar is Uint8List) {
-        print("Codificando imagen como Base64...");
-        String base64String = base64Encode(avatar);
-        print("Imagen codificada en Base64: ${base64String.length} caracteres");
-        return "data:image/jpeg;base64,$base64String";
-      } else {
-        throw Exception("Formato de avatar no soportado. Debe ser Uint8List.");
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception("No hay usuario autenticado");
       }
+
+      final storageRef = FirebaseStorage.instance.ref().child('avatars/${user.uid}.jpg');
+      await storageRef.putFile(avatar);
+      String imageUrl = await storageRef.getDownloadURL();
+      return imageUrl;
     } catch (e) {
       print("Error al subir la imagen: $e");
       throw e;

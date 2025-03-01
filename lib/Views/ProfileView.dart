@@ -27,74 +27,70 @@ class _ProfileViewState extends State<ProfileView> {
   final TextEditingController _nombre = TextEditingController();
   final TextEditingController _apodo = TextEditingController();
   final TextEditingController _edad = TextEditingController();
-  dynamic _avatar; // Puede ser Uint8List (Web) o File (Móvil)
+  File? _avatar;
   bool blUploading = false;
 
-  // Método para seleccionar imagen
-
-
-  // Método para manejar el registro
-  void _clickRegistro() async {
-    print("Iniciando registro...");
-
-    if (_formKey.currentState?.validate() ?? false) {
-      print("Formulario válido");
-
-      String nombre = _nombre.text;
-      int edad = int.tryParse(_edad.text) ?? 0;
-      String imagenURL = "https://www.example.com/default-profile-image.png"; // Imagen predeterminada
-      String apodo = _apodo.text;
-
-      try {
-        // Verificar autenticación
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) {
-          print("No hay perfil autenticado.");
-          return;
-        } else {
-          print("perfil autenticado: ${user.uid}");
-        }
-
-        // Verificar si se seleccionó un avatar
-        if (_avatar != null && _avatar is Uint8List) {
-          print("Avatar seleccionado. Almacenando como base64...");
-          // Opcional: Convertir `_avatar` en base64 para almacenarlo directamente en Firestore
-          imagenURL = "data:image/jpeg;base64,${base64Encode(_avatar)}";
-        } else {
-          print("No hay avatar seleccionado. Usando imagen predeterminada.");
-        }
-
-        // Crear el perfil
-        FbPerfil perfil = FbPerfil(
-          uid: user.uid,
-          nombre: nombre,
-          apodo: apodo,
-          edad: edad,
-          imagenURL: imagenURL,
-        );
-
-        print("Creando perfil con los datos: $perfil");
-        await FirebaseAdmin().crearPerfil(perfil);
-        print("Perfil creado correctamente.");
-
-        // Navegar a login
-        print("Navegando a /loginview...");
-        Navigator.of(context).pushNamed('/loginview');
-      } catch (e) {
-        print("Error al registrar al perfil: $e");
-      }
-    } else {
-      print("Formulario no válido.");
+  Future<void> _pickAvatar(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _avatar = File(pickedFile.path);
+      });
     }
   }
 
+  Future<String?> _uploadImage(File imageFile) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return null;
+
+      final storageRef = FirebaseStorage.instance.ref().child("perfiles/${user.uid}.jpg");
+      await storageRef.putFile(imageFile);
+      return await storageRef.getDownloadURL();
+    } catch (e) {
+      print("Error al subir la imagen: $e");
+      return null;
+    }
+  }
+
+  void _clickRegistro() async {
+    print("Iniciando registro...");
+    if (_formKey.currentState?.validate() ?? false) {
+      setState(() => blUploading = true);
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        print("No hay perfil autenticado.");
+        setState(() => blUploading = false);
+        return;
+      }
+
+      String imagenURL = "https://www.example.com/default-profile-image.png";
+      if (_avatar != null) {
+        final uploadedURL = await _uploadImage(_avatar!);
+        if (uploadedURL != null) {
+          imagenURL = uploadedURL;
+        }
+      }
+
+      FbPerfil perfil = FbPerfil(
+        uid: user.uid,
+        nombre: _nombre.text,
+        apodo: _apodo.text,
+        edad: int.tryParse(_edad.text) ?? 0,
+        imagenURL: imagenURL,
+      );
+
+      await FirebaseAdmin().crearPerfil(perfil);
+      setState(() => blUploading = false);
+      Navigator.of(context).pushNamed('/loginview');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.brown,
-      ),
+      appBar: AppBar(backgroundColor: Colors.brown),
       body: blUploading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -119,78 +115,31 @@ class _ProfileViewState extends State<ProfileView> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      "Registro",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
+                    Text("Registro", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black)),
                     const SizedBox(height: 20),
                     GestureDetector(
-                      //onTap: _pickAvatar,
+                      onTap: () => _pickAvatar(ImageSource.gallery),
                       child: CircleAvatar(
                         radius: 50,
-                        backgroundImage: _avatar != null
-                            ? (kIsWeb
-                            ? MemoryImage(_avatar)
-                            : FileImage(_avatar) as ImageProvider)
-                            : null,
-                        child: _avatar == null
-                            ? const Icon(Icons.add_a_photo,
-                            size: 50, color: Colors.grey)
-                            : null,
+                        backgroundImage: _avatar != null ? FileImage(_avatar!) : null,
+                        child: _avatar == null ? const Icon(Icons.add_a_photo, size: 50, color: Colors.grey) : null,
                       ),
                     ),
                     const SizedBox(height: 20),
-                    CustomTextField(
-                      hintText: 'Nombre',
-                      imageUrl:
-                      "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-                      controller: _nombre,
-                      keyboardType: TextInputType.text,
+                    ElevatedButton(
+                      onPressed: () => _pickAvatar(ImageSource.camera),
+                      child: Text("Tomar foto"),
                     ),
+                    CustomTextField(hintText: 'Nombre', controller: _nombre, keyboardType: TextInputType.text),
                     const SizedBox(height: 20),
-                    CustomTextField(
-                      hintText: 'Edad',
-                      imageUrl:
-                      "https://cdn-icons-png.flaticon.com/512/1087/1087815.png",
-                      controller: _edad,
-                      keyboardType: TextInputType.number,
-                    ),
+                    CustomTextField(hintText: 'Edad', controller: _edad, keyboardType: TextInputType.number),
                     const SizedBox(height: 20),
-                    CustomTextField(
-                      hintText: 'Apodo',
-                      imageUrl:
-                      "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-                      controller: _apodo,
-                      keyboardType: TextInputType.text,
-                    ),
+                    CustomTextField(hintText: 'Apodo', controller: _apodo, keyboardType: TextInputType.text),
                     const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          onPressed: _clickRegistro,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.brown,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            "Registrar",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ],
+                    ElevatedButton(
+                      onPressed: _clickRegistro,
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
+                      child: const Text("Registrar", style: TextStyle(color: Colors.white, fontSize: 16)),
                     ),
                   ],
                 ),

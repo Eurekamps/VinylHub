@@ -1,11 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-//import 'dart:html' as html;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -19,7 +16,7 @@ class EditProfileView extends StatefulWidget {
 
 class _EditProfileViewState extends State<EditProfileView> {
   final ImagePicker _picker = ImagePicker();
-  dynamic _avatar;
+  File? _avatar;
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _edadController = TextEditingController();
   final TextEditingController _apodoController = TextEditingController();
@@ -30,8 +27,6 @@ class _EditProfileViewState extends State<EditProfileView> {
     _cargarPerfil();
   }
 
-
-
   Future<void> _cargarPerfil() async {
     await DataHolder().obtenerPerfilDeFirestore(FirebaseAuth.instance.currentUser!.uid);
     setState(() {
@@ -39,20 +34,55 @@ class _EditProfileViewState extends State<EditProfileView> {
         _nombreController.text = DataHolder().miPerfil!.nombre ?? '';
         _edadController.text = DataHolder().miPerfil!.edad.toString() ?? '';
         _apodoController.text = DataHolder().miPerfil!.apodo ?? '';
-
-        // Solo usar _avatar si es Base64, de lo contrario mostrar URL o predeterminado
         _avatar = null;
       }
     });
   }
 
+  Future<void> _pickAvatar() async {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Wrap(
+          children: [
+            ListTile(
+              leading: Icon(Icons.camera_alt),
+              title: Text('Tomar foto'),
+              onTap: () async {
+                Navigator.pop(context);
+                final pickedFile = await _picker.pickImage(source: ImageSource.camera);
+                if (pickedFile != null) {
+                  setState(() {
+                    _avatar = File(pickedFile.path);
+                  });
+                }
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text('Seleccionar de la galería'),
+              onTap: () async {
+                Navigator.pop(context);
+                final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+                if (pickedFile != null) {
+                  setState(() {
+                    _avatar = File(pickedFile.path);
+                  });
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Editar Perfil"),
-        backgroundColor: Colors.brown,
+        backgroundColor: Colors.grey,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -60,25 +90,15 @@ class _EditProfileViewState extends State<EditProfileView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             GestureDetector(
-              //onTap: _pickAvatar,
+              onTap: _pickAvatar,
               child: CircleAvatar(
                 radius: 50,
                 backgroundColor: Colors.grey[300],
                 backgroundImage: _avatar != null
-                    ? (kIsWeb
-                    ? MemoryImage(_avatar as Uint8List) // Uint8List para web
-                    : FileImage(_avatar as File) as ImageProvider) // File para móviles
-                    : (DataHolder().miPerfil != null &&
-                    DataHolder().miPerfil!.imagenURL.isNotEmpty
-                    ? (DataHolder().miPerfil!.imagenURL.startsWith("data:image")
-                    ? MemoryImage(base64Decode(DataHolder()
-                    .miPerfil!
-                    .imagenURL
-                    .split(',')[1])) as ImageProvider
-                    : NetworkImage(
-                    DataHolder().miPerfil!.imagenURL) as ImageProvider)
-                    : AssetImage('assets/default-profile.png')
-                as ImageProvider),
+                    ? FileImage(_avatar!) as ImageProvider
+                    : (DataHolder().miPerfil != null && DataHolder().miPerfil!.imagenURL.isNotEmpty
+                    ? NetworkImage(DataHolder().miPerfil!.imagenURL) as ImageProvider
+                    : AssetImage('assets/default-profile.png') as ImageProvider),
               ),
             ),
             SizedBox(height: 20),
@@ -112,19 +132,17 @@ class _EditProfileViewState extends State<EditProfileView> {
     String apodo = _apodoController.text;
     String imagenURL = DataHolder().miPerfil!.imagenURL;
 
-    // Si se seleccionó una nueva imagen
-    if (_avatar != null && _avatar is Uint8List) {
+    if (_avatar != null) {
       try {
-        print("Subiendo nueva imagen desde Web...");
-        imagenURL = await FirebaseAdmin().subirImagen(_avatar); // Codificar imagen en Base64
+        print("Subiendo nueva imagen...");
+        imagenURL = await FirebaseAdmin().subirImagen(_avatar!);
         print("Imagen subida con éxito: ${imagenURL.length} caracteres");
       } catch (e) {
         print("Error al subir la imagen: $e");
-        return; // Si falla la subida, no continuar con la actualización
+        return;
       }
     }
 
-    // Actualizar el perfil en Firestore
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
@@ -132,17 +150,15 @@ class _EditProfileViewState extends State<EditProfileView> {
         return;
       }
 
-      // Actualizamos la base de datos con la nueva imagen URL (si fue modificada)
       await FirebaseFirestore.instance.collection('perfiles').doc(user.uid).update({
         'nombre': nombre,
         'edad': int.tryParse(edad) ?? 0,
         'apodo': apodo,
-        'imagenURL': imagenURL, // Mantener la imagenURL (ya sea Base64 o predeterminada)
+        'imagenURL': imagenURL,
       });
 
       print("Perfil actualizado correctamente en Firestore.");
 
-      // Actualizar localmente en DataHolder
       setState(() {
         DataHolder().miPerfil!.nombre = nombre;
         DataHolder().miPerfil!.edad = int.tryParse(edad) ?? 0;
@@ -150,10 +166,9 @@ class _EditProfileViewState extends State<EditProfileView> {
         DataHolder().miPerfil!.imagenURL = imagenURL;
       });
 
-      Navigator.of(context).pushNamed('/homeview'); // Regresar a la pantalla anterior
+      Navigator.of(context).pushNamed('/homeview');
     } catch (e) {
       print("Error al actualizar el perfil en Firestore: $e");
     }
   }
-
 }
