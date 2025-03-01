@@ -7,6 +7,7 @@ import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
 
 import '../FbObjects/FbMensaje.dart';
 import '../FbObjects/FbPerfil.dart';
+import '../FbObjects/FbPost.dart';
 import '../Singletone/DataHolder.dart';
 
 class ChatView extends StatefulWidget{
@@ -135,14 +136,123 @@ class _ChatViewState extends State<ChatView> {
     return mensaje.sAutorUid == uidUsuarioActual;
   }
 
+  Future<void> actualizarFbPostSelected() async {
+    if (DataHolder().fbChatSelected != null) {
+      String postId = DataHolder().fbChatSelected!.uidPost;  // El UID del post relacionado con el chat
+
+      if (postId.isNotEmpty) {
+        try {
+          // Obtener el post desde Firestore usando el uidPost del chat
+          DocumentSnapshot postSnapshot = await FirebaseFirestore.instance
+              .collection('Posts')  // Asegúrate de usar la colección correcta
+              .doc(postId)
+              .get();
+
+          if (postSnapshot.exists) {
+            // Asignar el post a fbPostSelected
+            FbPost post = FbPost.fromFirestore(postSnapshot);
+            DataHolder().fbPostSelected = post;  // Asignamos el post seleccionado al DataHolder
+          } else {
+            print("Post no encontrado.");
+          }
+        } catch (e) {
+          print("Error al obtener el post: $e");
+        }
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Chat ${DataHolder().fbChatSelected!.sTitulo}"),
-        backgroundColor: Colors.teal,
+        title: GestureDetector(
+          onTap: () async {
+            // Actualizar fbPostSelected antes de navegar
+            await actualizarFbPostSelected();
+
+            // Verificamos que fbPostSelected está asignado antes de navegar
+            if (DataHolder().fbPostSelected != null) {
+              String usuarioActualUid = DataHolder().miPerfil?.uid ?? ''; // Asegúrate de que el uid del usuario esté disponible
+
+              // Comprobar si el autor del post es el mismo que el usuario actual
+              if (DataHolder().fbPostSelected!.sAutorUid == usuarioActualUid) {
+                // Si el post fue creado por el usuario actual, navegar a PostDetailsPropio
+                Navigator.pushNamed(
+                  context,
+                  '/postdetailspropio',  // Ruta al detalle del post propio
+                  arguments: DataHolder().fbPostSelected,  // Pasamos el objeto FbPost completo
+                );
+              } else {
+                // Si el post no fue creado por el usuario actual, navegar a PostDetails
+                Navigator.pushNamed(
+                  context,
+                  '/postdetails',  // Ruta al detalle del post
+                  arguments: DataHolder().fbPostSelected,  // Pasamos el objeto FbPost completo
+                );
+              }
+            } else {
+              print("fbPostSelected no está asignado.");
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No se encontró el post relacionado.")));
+            }
+          },
+          child: Text(DataHolder().fbChatSelected?.sTitulo ?? 'Chat sin título'),
+        ),
+        backgroundColor: Colors.grey,
+        actions: [
+          PopupMenuButton<int>(
+            onSelected: (int value) async {
+              if (value == 1) {
+                // Navegar al perfil (si lo necesitas)
+              } else if (value == 2) {
+                // Eliminar el chat
+                String chatId = DataHolder().fbChatSelected?.uid ?? '';  // Asegúrate de tener el ID del chat seleccionado
+
+                if (chatId.isNotEmpty) {
+                  try {
+                    // Eliminar el chat de Firestore
+                    await FirebaseFirestore.instance
+                        .collection('Chats')  // Asegúrate de usar la colección correcta
+                        .doc(chatId)
+                        .delete();
+
+                    // Eliminar los mensajes asociados si es necesario
+                    await FirebaseFirestore.instance
+                        .collection('Chats')
+                        .doc(chatId)
+                        .collection('mensajes')
+                        .get()
+                        .then((snapshot) {
+                      for (var doc in snapshot.docs) {
+                        doc.reference.delete();
+                      }
+                    });
+
+                    Navigator.pushNamed(context, '/homeview');
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Chat eliminado exitosamente")));
+                  } catch (e) {
+                    print("Error al eliminar el chat: $e");
+                  }
+                }
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
+              const PopupMenuItem<int>(
+                value: 1,
+                child: Text('Ver Perfil'),
+              ),
+              const PopupMenuItem<int>(
+                value: 2,
+                child: Text('Eliminar Chat'),
+              ),
+            ],
+          )
+        ],
       ),
+
+
+
       body: Column(
         children: [
           // Lista de mensajes
