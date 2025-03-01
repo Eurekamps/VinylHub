@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
+import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../FbObjects/FbFavorito.dart';

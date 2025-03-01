@@ -1,4 +1,4 @@
-package com.example.fluttarkia.hijos_de_fluttarkia
+package com.example.vinylhub
 
 import io.flutter.embedding.android.FlutterActivity
 

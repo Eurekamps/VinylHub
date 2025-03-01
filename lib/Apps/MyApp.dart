@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hijos_de_fluttarkia/Views/BusquedaView.dart';
-import 'package:hijos_de_fluttarkia/Views/ChatView.dart';
-import 'package:hijos_de_fluttarkia/Views/FavoritosView.dart';
-import 'package:hijos_de_fluttarkia/Views/PostDetails.dart';
-import 'package:hijos_de_fluttarkia/Views/PostDetailsPropio.dart';
-import 'package:hijos_de_fluttarkia/Views/TuPerfil.dart';
+import 'package:vinylhub/Views/BusquedaView.dart';
+import 'package:vinylhub/Views/ChatView.dart';
+import 'package:vinylhub/Views/FavoritosView.dart';
+import 'package:vinylhub/Views/PostDetails.dart';
+import 'package:vinylhub/Views/PostDetailsPropio.dart';
+import 'package:vinylhub/Views/TuPerfil.dart';
+
 
 
 import '../Views/EditProfileView.dart';

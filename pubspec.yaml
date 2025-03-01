@@ -1,4 +1,4 @@
-name: hijos_de_fluttarkia
+name: vinylhub
 description: "A new Flutter project."
 
 version: 1.0.0+1
@@ -28,6 +28,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_remote_config: ^5.2.0
   share_plus: ^10.1.4
+  flutter_launcher_icons: ^0.14.3
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
 
 
 dev_dependencies:

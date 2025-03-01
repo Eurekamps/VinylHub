@@ -3,9 +3,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
-import 'package:hijos_de_fluttarkia/Views/FavoritosView.dart';
-import 'package:hijos_de_fluttarkia/Views/TuPerfil.dart';
+import 'package:vinylhub/FbObjects/FbChat.dart';
+import 'package:vinylhub/Views/FavoritosView.dart';
+import 'package:vinylhub/Views/TuPerfil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // Para convertir la imagen a base64
 import 'dart:typed_data'; // Para trabajar con bytes de la imagen

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:hijos_de_fluttarkia/FbObjects/FbChat.dart';
+import 'package:vinylhub/FbObjects/FbChat.dart';
 
 import '../FbObjects/FbMensaje.dart';
 import '../FbObjects/FbPerfil.dart';

@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.fluttarkia.hijos_de_fluttarkia">
+    package="com.example.vinylhub">
 
     <!-- Permisos necesarios -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -12,7 +12,7 @@
         android:required="false" />
 
     <application
-        android:label="hijos_de_fluttarkia"
+        android:label="VinylHub"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

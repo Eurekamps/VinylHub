@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.fluttarkia.hijos_de_fluttarkia"
+    namespace = "com.example.vinylhub"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

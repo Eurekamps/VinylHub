@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../AdminClasses/FirebaseAdmin.dart';
 import '../FbObjects/FbPerfil.dart';
-import 'package:hijos_de_fluttarkia/Singletone/DataHolder.dart';
+import 'package:vinylhub/Singletone/DataHolder.dart';
 
 import '../CustomViews/VinylBoton.dart';
 

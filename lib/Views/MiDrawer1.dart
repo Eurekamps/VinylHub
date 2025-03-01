@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:hijos_de_fluttarkia/AdminClasses/FirebaseAdmin.dart';
+import 'package:vinylhub/AdminClasses/FirebaseAdmin.dart';
 import '../FbObjects/FbPerfil.dart';
 import '../Singletone/DataHolder.dart';  // Asegúrate de tener este archivo con tu modelo FbPerfil.
 

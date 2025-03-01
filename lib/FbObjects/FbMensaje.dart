@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:hijos_de_fluttarkia/AdminClasses/FirebaseAdmin.dart';
+import 'package:vinylhub/AdminClasses/FirebaseAdmin.dart';
 
 class FbMensaje{
 
