@@ -8,12 +8,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-//import 'dart:html' as html; // Importado para soporte de Web
 import '../AdminClasses/FirebaseAdmin.dart';
 import '../CustomViews/CustomTextField.dart';
 import '../FbObjects/FbPerfil.dart';
 import '../Singletone/DataHolder.dart';
-
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -87,59 +85,121 @@ class _ProfileViewState extends State<ProfileView> {
     }
   }
 
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text("Seleccionar de la Galería"),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAvatar(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.camera_alt),
+              title: Text("Tomar Foto"),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAvatar(ImageSource.camera);
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.brown),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: blUploading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
         child: Container(
           height: MediaQuery.of(context).size.height,
           decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/coleccion.jpeg'),
-              fit: BoxFit.cover,
-            ),
+            color: Colors.grey[200], // Fondo gris claro
           ),
           child: Center(
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white, // Fondo blanco para el contenedor
+                borderRadius: BorderRadius.circular(24), // Bordes más redondeados
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26, // Sombra suave
+                    offset: Offset(0, 4),
+                    blurRadius: 6,
+                  ),
+                ],
               ),
-              width: 300,
+              width: 320, // Ancho del contenedor ajustado
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("Registro", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black)),
-                    const SizedBox(height: 20),
+                    Text(
+                      "Completa Tu Perfil",
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
                     GestureDetector(
-                      onTap: () => _pickAvatar(ImageSource.gallery),
+                      onTap: _showImagePickerOptions, // Mostrar opciones para seleccionar imagen
                       child: CircleAvatar(
                         radius: 50,
-                        backgroundImage: _avatar != null ? FileImage(_avatar!) : null,
-                        child: _avatar == null ? const Icon(Icons.add_a_photo, size: 50, color: Colors.grey) : null,
+                        backgroundImage: _avatar != null
+                            ? FileImage(_avatar!)
+                            : null,
+                        child: _avatar == null
+                            ? const Icon(Icons.add_a_photo, size: 50, color: Colors.grey)
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () => _pickAvatar(ImageSource.camera),
-                      child: Text("Tomar foto"),
+                    CustomTextField(
+                      hintText: 'Nombre',
+                      controller: _nombre,
+                      keyboardType: TextInputType.text,
                     ),
-                    CustomTextField(hintText: 'Nombre', controller: _nombre, keyboardType: TextInputType.text),
                     const SizedBox(height: 20),
-                    CustomTextField(hintText: 'Edad', controller: _edad, keyboardType: TextInputType.number),
+                    CustomTextField(
+                      hintText: 'Edad',
+                      controller: _edad,
+                      keyboardType: TextInputType.number,
+                    ),
                     const SizedBox(height: 20),
-                    CustomTextField(hintText: 'Apodo', controller: _apodo, keyboardType: TextInputType.text),
-                    const SizedBox(height: 20),
+                    CustomTextField(
+                      hintText: 'Apodo',
+                      controller: _apodo,
+                      keyboardType: TextInputType.text,
+                    ),
+                    const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: _clickRegistro,
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.brown),
-                      child: const Text("Registrar", style: TextStyle(color: Colors.white, fontSize: 16)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey[600], // Color gris para el botón
+                        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        "Registrar",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
                     ),
                   ],
                 ),

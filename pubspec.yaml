@@ -29,6 +29,7 @@ dependencies:
   firebase_remote_config: ^5.2.0
   share_plus: ^10.1.4
   flutter_launcher_icons: ^0.14.3
+  google_sign_in: ^6.2.2
 
 flutter_icons:
   android: true
@@ -54,4 +55,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/
+    - assets/app_icon.png
+    - assets/google_logo.png

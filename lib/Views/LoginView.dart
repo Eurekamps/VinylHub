@@ -7,6 +7,7 @@ import '../FbObjects/FbPerfil.dart';
 import 'package:vinylhub/Singletone/DataHolder.dart';
 
 import '../CustomViews/VinylBoton.dart';
+import '../Services/AuthService.dart';
 
 class LoginView extends StatefulWidget{
   const LoginView({super.key});
@@ -26,93 +27,124 @@ class _LoginViewState extends State<LoginView> {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/coleccion.jpeg'),
-            fit: BoxFit.cover, // Asegura que la imagen cubra toda la pantalla
-          ),
+          color: Colors.grey[200], // Fondo gris claro
         ),
         child: Center(
           child: Container(
-            padding: EdgeInsets.all(16), // Margen interno para evitar que el texto toque los bordes
+            padding: EdgeInsets.all(20), // Ajuste en el padding
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5), // Fondo blanco semitransparente
-              borderRadius: BorderRadius.circular(16), // Bordes redondeados para la caja
+              color: Colors.white, // Fondo blanco para el contenedor
+              borderRadius: BorderRadius.circular(24), // Bordes más redondeados
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26, // Sombra suave
+                  offset: Offset(0, 4),
+                  blurRadius: 6,
+                ),
+              ],
             ),
-            width: 300, // Ancho del contenedor
+            width: 320, // Ancho del contenedor ajustado
             child: Column(
-              mainAxisSize: MainAxisSize.min, // Ajusta la altura al contenido
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   "Inicia Sesión En Tu Cuenta",
-                  style: GoogleFonts.robotoMono(
-                    color: Colors.black,
-                    fontSize: 24, // Tamaño ajustado para que sea más legible
+                  style: GoogleFonts.poppins(
+                    color: Colors.black87,
+                    fontSize: 26, // Título más grande
+                    fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 24),
                 TextFormField(
                   controller: tecUser,
                   decoration: InputDecoration(
                     labelText: 'E-Mail',
-                    labelStyle: TextStyle(color: Colors.black),
+                    labelStyle: TextStyle(color: Colors.black54),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.black, width: 2.0),
-                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
                   ),
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: 16),
                 TextFormField(
                   controller: tecPass,
-                  obscureText: obscureText, // Controla si la contraseña está oculta o visible
+                  obscureText: obscureText,
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
-                    labelStyle: TextStyle(color: Colors.black),
+                    labelStyle: TextStyle(color: Colors.black54),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.black),
-                    ),
+                    filled: true,
+                    fillColor: Colors.grey[100],
                     suffixIcon: IconButton(
                       icon: Icon(
                         obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: Colors.black,
+                        color: Colors.black54,
                       ),
                       onPressed: () {
                         setState(() {
-                          obscureText = !obscureText; // Alterna entre ocultar y mostrar
+                          obscureText = !obscureText;
                         });
                       },
                     ),
                   ),
                 ),
-                SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    VinylBoton(
-                      sTitulo: "Login",
-                      color: Colors.brown,
-                      onBotonVinylPressed: () async {
-                        await FirebaseAdmin().clickLogin(
-                            email: tecUser.text,
-                            password: tecPass.text,
-                            context: context
-                        );
-                      },
+                SizedBox(height: 24),
+                VinylBoton(
+                  sTitulo: "Login",
+                  color: Colors.black54, // Color marrón más oscuro
+                  borderRadius: BorderRadius.circular(12), // Bordes redondeados para el botón
+                  onBotonVinylPressed: () async {
+                    await FirebaseAdmin().clickLogin(
+                      email: tecUser.text,
+                      password: tecPass.text,
+                      context: context,
+                    );
+                  },
+                ),
+                SizedBox(height: 16),
+                VinylBoton(
+                  sTitulo: "Registro",
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(12), // Bordes redondeados para el botón
+                  onBotonVinylPressed: () {
+                    Navigator.of(context).pushNamed('/registerview');
+                  },
+                ),
+                SizedBox(height: 24),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12), // Bordes redondeados para el botón
                     ),
-                    VinylBoton(
-                      sTitulo: "Registro",
-                      color: Colors.brown,
-                      onBotonVinylPressed: () { Navigator.of(context).pushNamed('/registerview'); },
-                    ),
-                  ],
+                    padding: EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                    elevation: 4,
+                  ),
+                  onPressed: () async {
+                    User? user = await AuthService().signInWithGoogle();
+                    if (user != null) {
+                      await AuthService().checkUserProfile(context);
+                      print("Usuario autenticado: ${user.displayName}");
+                    } else {
+                      print("Error al iniciar sesión con Google");
+                    }
+                  },
+                  icon: Image.asset(
+                    'assets/google_logo.png',
+                    height: 24,
+                  ),
+                  label: Text(
+                    "Iniciar sesión con Google",
+                    style: TextStyle(color: Colors.black, fontSize: 16),
+                  ),
                 ),
               ],
             ),
@@ -121,4 +153,5 @@ class _LoginViewState extends State<LoginView> {
       ),
     );
   }
+
 }

@@ -12,7 +12,12 @@
           "package_name": "com.example.fluttarkia"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "373265416191-5jjh8ep7d2gm98pev9vnqd0uglm91h66.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCngQCPohzmnj3BMslR_dfk3P-6OHVD5xE"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "373265416191-5jjh8ep7d2gm98pev9vnqd0uglm91h66.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "373265416191-gqn69ub1kg8k48l7s1p3rjoihsd8gb6m.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fluttarkia.hijosDeFluttarkia"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +48,12 @@
           "package_name": "com.example.fluttarkia.hijos_de_fluttarkia"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "373265416191-5jjh8ep7d2gm98pev9vnqd0uglm91h66.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCngQCPohzmnj3BMslR_dfk3P-6OHVD5xE"
@@ -39,7 +61,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "373265416191-5jjh8ep7d2gm98pev9vnqd0uglm91h66.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "373265416191-gqn69ub1kg8k48l7s1p3rjoihsd8gb6m.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fluttarkia.hijosDeFluttarkia"
+              }
+            }
+          ]
         }
       }
     }
