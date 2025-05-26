@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -68,6 +69,7 @@ class _BusquedaViewState extends State<BusquedaView> {
       blListaPostsVisible = false;
     });
   }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +102,7 @@ class _BusquedaViewState extends State<BusquedaView> {
             child: _filteredPosts.isEmpty
                 ? Center(child: Text('No se encontraron posts.'))
                 : GridView.builder(
+              // No uso shrinkWrap ni physics porque está dentro de Expanded
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 8.0,
@@ -118,19 +121,22 @@ class _BusquedaViewState extends State<BusquedaView> {
                     ),
                     elevation: 4,
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(4.0), // más compacto
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Imagen del post usando URL
                           if (post.imagenURLpost.isNotEmpty)
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child: AspectRatio(
                                 aspectRatio: 1.5,
-                                child: Image.network(
-                                  post.imagenURLpost[0], // Muestra la primera URL de imagen
+                                child: CachedNetworkImage(
+                                  imageUrl: post.imagenURLpost[0],
                                   fit: BoxFit.cover,
+                                  placeholder: (context, url) =>
+                                      Center(child: CircularProgressIndicator()),
+                                  errorWidget: (context, url, error) =>
+                                      Icon(Icons.error, color: Colors.red),
                                 ),
                               ),
                             )
@@ -153,6 +159,8 @@ class _BusquedaViewState extends State<BusquedaView> {
                               fontSize: 16,
                             ),
                             textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                           SizedBox(height: 4),
                           Text(
@@ -162,6 +170,8 @@ class _BusquedaViewState extends State<BusquedaView> {
                               fontSize: 14,
                             ),
                             textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                           SizedBox(height: 4),
                           Text(
@@ -180,4 +190,5 @@ class _BusquedaViewState extends State<BusquedaView> {
       ),
     );
   }
+
 }

@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:vinylhub/AdminClasses/FirebaseAdmin.dart';
 
 import '../CustomViews/VinylBoton.dart';
 
@@ -97,106 +98,114 @@ class _RegisterViewState extends State<RegisterView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/coleccion.jpeg'),
-            fit: BoxFit.cover, // Asegura que la imagen cubra toda la pantalla
+      backgroundColor: Colors.grey[200], // Fondo gris claro similar
+      body: Center(
+        child: Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                offset: Offset(0, 4),
+                blurRadius: 6,
+              ),
+            ],
           ),
-        ),
-        child: Center(
-          child: Container(
-            padding: EdgeInsets.all(16), // Margen interno para evitar que el texto toque los bordes
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5), // Fondo blanco semitransparente
-              borderRadius: BorderRadius.circular(16), // Bordes redondeados para la caja
-            ),
-            width: 300, // Ancho del contenedor
-            child: Column(
-              mainAxisSize: MainAxisSize.min, // Ajusta la altura al contenido
-              children: [
-                Text(
-                  "Regístrate",
-                  style: GoogleFonts.robotoMono(
-                    color: Colors.black,
-                    fontSize: 24, // Tamaño ajustado para que sea más legible
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Logo VinylHub arriba
+              Image.asset(
+                'assets/app_icon.png', // Asegúrate que sea el logo VinylHub
+                height: 80,
+              ),
+              SizedBox(height: 12),
+              Text(
+                "Regístrate",
+                style: GoogleFonts.poppins(
+                  color: Colors.black87,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
+              TextFormField(
+                controller: tecEmail,
+                decoration: InputDecoration(
+                  labelText: 'E-Mail',
+                  labelStyle: TextStyle(color: Colors.black54),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
-                  textAlign: TextAlign.center,
+                  filled: true,
+                  fillColor: Colors.white,
                 ),
-                SizedBox(height: 20),
-                TextFormField(
-                  controller: tecEmail,
-                  decoration: InputDecoration(
-                    labelText: 'E-Mail',
-                    labelStyle: TextStyle(color: Colors.black),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.black),
-                    ),
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: tecPass,
+                decoration: InputDecoration(
+                  labelText: 'Contraseña',
+                  labelStyle: TextStyle(color: Colors.black54),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
+                  filled: true,
+                  fillColor: Colors.white,
+
                 ),
-                SizedBox(height: 20),
-                TextFormField(
-                  controller: tecPass,
-                  obscureText: obscureText, // Controla si la contraseña está oculta o visible
-                  decoration: InputDecoration(
-                    labelText: 'Contraseña',
-                    labelStyle: TextStyle(color: Colors.black),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.black),
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        obscureText ? Icons.visibility_off : Icons.visibility,
-                        color: Colors.black,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          obscureText = !obscureText; // Alterna entre ocultar y mostrar
-                        });
-                      },
-                    ),
+              ),
+              SizedBox(height: 16),
+              TextFormField(
+                controller: tecPassRepeat,
+                decoration: InputDecoration(
+                  labelText: 'Confirmar contraseña',
+                  labelStyle: TextStyle(color: Colors.black54),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
+                  filled: true,
+                  fillColor: Colors.white,
+
                 ),
-                SizedBox(height: 20),
-                TextFormField(
-                  controller: tecPassRepeat,
-                  obscureText: true, // Siempre oculto para la confirmación de contraseña
-                  decoration: InputDecoration(
-                    labelText: 'Confirmar contraseña',
-                    labelStyle: TextStyle(color: Colors.black),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.black),
-                    ),
+              ),
+              SizedBox(height: 24),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[100],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  padding: EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                  elevation: 4,
                 ),
-                SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    VinylBoton(
-                      sTitulo: "Registrar",
-                      color: Colors.brown,
-                      onBotonVinylPressed: (){clickRegistrar(context);},
-                    ),
-                  ],
+                onPressed: () async {
+                  await FirebaseAdmin().clickRegistrar(
+                    context,
+                    email: tecEmail.text.trim(),
+                    password: tecPass.text,
+                    passwordRepeat: tecPassRepeat.text,
+                  );
+                  // No necesitas Navigator aquí porque dentro de clickRegistrar ya haces pushNamed("/loginview")
+                },
+                child: Text(
+                  "Registrar",
+                  style: TextStyle(color: Colors.black, fontSize: 16),
                 ),
-              ],
-            ),
+              ),
+
+            ],
           ),
         ),
       ),
     );
   }
+
 }

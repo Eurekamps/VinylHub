@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../AdminClasses/FirebaseAdmin.dart';
 import '../CustomViews/CustomTextField.dart';
@@ -117,97 +118,100 @@ class _ProfileViewState extends State<ProfileView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+      backgroundColor: Colors.grey[200], // Fondo gris claro
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        automaticallyImplyLeading: false, // Quita la flecha atrás
+      ),
       body: blUploading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          : Center(
         child: Container(
-          height: MediaQuery.of(context).size.height,
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.grey[200], // Fondo gris claro
+            color: Colors.white, // Fondo blanco para el contenedor
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black26,
+                offset: Offset(0, 4),
+                blurRadius: 6,
+              ),
+            ],
           ),
-          child: Center(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white, // Fondo blanco para el contenedor
-                borderRadius: BorderRadius.circular(24), // Bordes más redondeados
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26, // Sombra suave
-                    offset: Offset(0, 4),
-                    blurRadius: 6,
+          width: 320,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Completa Tu Perfil",
+                  style: GoogleFonts.poppins(
+                    color: Colors.black87,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
-              width: 320, // Ancho del contenedor ajustado
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Completa Tu Perfil",
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                    GestureDetector(
-                      onTap: _showImagePickerOptions, // Mostrar opciones para seleccionar imagen
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundImage: _avatar != null
-                            ? FileImage(_avatar!)
-                            : null,
-                        child: _avatar == null
-                            ? const Icon(Icons.add_a_photo, size: 50, color: Colors.grey)
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    CustomTextField(
-                      hintText: 'Nombre',
-                      controller: _nombre,
-                      keyboardType: TextInputType.text,
-                    ),
-                    const SizedBox(height: 20),
-                    CustomTextField(
-                      hintText: 'Edad',
-                      controller: _edad,
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 20),
-                    CustomTextField(
-                      hintText: 'Apodo',
-                      controller: _apodo,
-                      keyboardType: TextInputType.text,
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: _clickRegistro,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[600], // Color gris para el botón
-                        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Registrar",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
-                      ),
-                    ),
-                  ],
+                  textAlign: TextAlign.center,
                 ),
-              ),
+                const SizedBox(height: 24),
+                GestureDetector(
+                  onTap: _showImagePickerOptions,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundImage:
+                    _avatar != null ? FileImage(_avatar!) : null,
+                    child: _avatar == null
+                        ? const Icon(
+                      Icons.add_a_photo,
+                      size: 50,
+                      color: Colors.grey,
+                    )
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                CustomTextField(
+                  hintText: 'Nombre',
+                  controller: _nombre,
+                  keyboardType: TextInputType.text,
+                ),
+                const SizedBox(height: 20),
+                CustomTextField(
+                  hintText: 'Edad',
+                  controller: _edad,
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 20),
+                CustomTextField(
+                  hintText: 'Apodo',
+                  controller: _apodo,
+                  keyboardType: TextInputType.text,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: _clickRegistro,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[100], // Gris claro botón
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: EdgeInsets.symmetric(
+                        vertical: 14, horizontal: 24),
+                    elevation: 4,
+                  ),
+                  child: const Text(
+                    "Registrar",
+                    style: TextStyle(color: Colors.black, fontSize: 16),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+
 }

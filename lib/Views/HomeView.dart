@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:vinylhub/Views/FavoritosView.dart';
 import 'package:vinylhub/Views/TuPerfil.dart';
@@ -371,9 +373,13 @@ class _HomeViewState extends State<HomeView> {
                           borderRadius: BorderRadius.circular(10), // Redondea la imagen
                           child: AspectRatio(
                             aspectRatio: 1.5, // Relación de aspecto fija (ancho/alto)
-                            child: Image.network(
-                              post.imagenURLpost.first, // Usamos la URL directamente
-                              fit: BoxFit.contain, // Muestra toda la imagen dentro del área sin recortarla
+                            child: CachedNetworkImage(
+                              imageUrl: post.imagenURLpost.first,
+                              fit: BoxFit.contain,
+                              placeholder: (context, url) =>
+                                  Center(child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) =>
+                                  Icon(Icons.error, color: Colors.red),
                             ),
                           ),
                         )
@@ -389,7 +395,8 @@ class _HomeViewState extends State<HomeView> {
                           ),
                         ),
                       SizedBox(height: 8), // Espaciado entre la imagen y el título
-                      Expanded( // Usa Expanded para permitir que el texto se ajuste al espacio disponible
+                      Expanded(
+                        // Usa Expanded para permitir que el texto se ajuste al espacio disponible
                         child: Text(
                           post.titulo,
                           style: TextStyle(
@@ -397,6 +404,8 @@ class _HomeViewState extends State<HomeView> {
                             fontSize: 16,
                           ),
                           textAlign: TextAlign.center,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                       SizedBox(height: 4), // Espaciado entre el título y la categoría
@@ -407,6 +416,8 @@ class _HomeViewState extends State<HomeView> {
                           fontSize: 14,
                         ),
                         textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                       SizedBox(height: 4),
                       Text(
@@ -420,6 +431,7 @@ class _HomeViewState extends State<HomeView> {
             );
           },
         );
+
       },
     );
   }
@@ -717,12 +729,21 @@ class _HomeViewState extends State<HomeView> {
                             // Imagen del chat en formato circular
                             ClipOval(
                               child: chat.sImagenURL.isNotEmpty
-                                  ? Image.network(
-                                chat.sImagenURL,
+                                  ? CachedNetworkImage(
+                                imageUrl: chat.sImagenURL,
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
+                                placeholder: (context, url) => Shimmer.fromColors(
+                                  baseColor: Colors.grey[300]!,
+                                  highlightColor: Colors.grey[100]!,
+                                  child: Container(
+                                    width: 50,
+                                    height: 50,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
                                   width: 50,
                                   height: 50,
                                   color: Colors.grey.shade300,
@@ -742,6 +763,7 @@ class _HomeViewState extends State<HomeView> {
                                 ),
                               ),
                             ),
+
                             SizedBox(width: 12),
                             // Información del chat
                             Expanded(
@@ -812,7 +834,7 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.grey,
+        backgroundColor: Colors.grey[200],
         title: Center(
           child: Text(
             "VinylHub",

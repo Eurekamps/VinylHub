@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart'; // ✅ NUEVA IMPORTACIÓN
 
 import '../FbObjects/FbPost.dart';
 import '../Singletone/DataHolder.dart';
@@ -24,7 +25,7 @@ class _TuPerfilState extends State<TuPerfil> {
   Future<void> _cargarPerfil() async {
     await DataHolder().obtenerPerfilDeFirestore(FirebaseAuth.instance.currentUser!.uid);
     setState(() {
-      // Esto notificará a Flutter que se debe reconstruir la vista
+      // Notifica que debe reconstruirse
     });
   }
 
@@ -43,7 +44,6 @@ class _TuPerfilState extends State<TuPerfil> {
 
         final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
 
-        //Filtra los posts creados por el usuario logueado
         var posts = snapshot.data!.docs
             .map((doc) => FbPost.fromFirestore(doc))
             .where((post) => post.sAutorUid == currentUserUid)
@@ -86,9 +86,11 @@ class _TuPerfilState extends State<TuPerfil> {
                           borderRadius: BorderRadius.circular(10),
                           child: AspectRatio(
                             aspectRatio: 1.5,
-                            child: Image.network(
-                              post.imagenURLpost.first, // Usamos la URL directamente
+                            child: CachedNetworkImage(
+                              imageUrl: post.imagenURLpost.first, // ✅ CARGA CON CACHE
                               fit: BoxFit.contain,
+                              placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) => Icon(Icons.error),
                             ),
                           ),
                         )
@@ -111,6 +113,8 @@ class _TuPerfilState extends State<TuPerfil> {
                           fontSize: 16,
                         ),
                         textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                       SizedBox(height: 4),
                       Text(
@@ -120,6 +124,8 @@ class _TuPerfilState extends State<TuPerfil> {
                           fontSize: 14,
                         ),
                         textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                       SizedBox(height: 4),
                       Text(
@@ -143,18 +149,18 @@ class _TuPerfilState extends State<TuPerfil> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(height: 15 ,),
+        SizedBox(height: 15),
         CircleAvatar(
           radius: 50,
           backgroundImage: DataHolder().miPerfil != null &&
               DataHolder().miPerfil!.imagenURL != null &&
               DataHolder().miPerfil!.imagenURL!.isNotEmpty
-              ? NetworkImage(DataHolder().miPerfil!.imagenURL!)
+              ? CachedNetworkImageProvider(DataHolder().miPerfil!.imagenURL!) // ✅ OPTIMIZA TAMBIÉN EL PERFIL
               : AssetImage('assets/default-profile.png') as ImageProvider,
         ),
         SizedBox(height: 10),
         Text(
-          DataHolder().miPerfil?.nombre ?? "Usuario", // Accede al nombre de miPerfil
+          DataHolder().miPerfil?.nombre ?? "Usuario",
           style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         Text(

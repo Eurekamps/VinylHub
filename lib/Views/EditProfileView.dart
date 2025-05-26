@@ -82,7 +82,7 @@ class _EditProfileViewState extends State<EditProfileView> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Editar Perfil"),
-        backgroundColor: Colors.grey,
+        backgroundColor: Colors.grey[200],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

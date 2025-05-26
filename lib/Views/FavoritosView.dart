@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -60,7 +61,9 @@ class _FavoritosViewState extends State<FavoritosView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Favoritos"),
+        title: Text("Favoritos", textAlign: TextAlign.center,),
+
+        automaticallyImplyLeading: false,
       ),
       body: FutureBuilder<List<DocumentSnapshot>>(
         future: _favoritosPostsFuture,
@@ -94,28 +97,28 @@ class _FavoritosViewState extends State<FavoritosView> {
                     return GestureDetector(
                       onTap: () {
                         FbPost postSeleccionado = FbPost.fromFirestore(posts[index]);
-                        // Llama a la función onPostItem_MasDatosClicked con el post convertido
                         onPostItem_MasDatosClicked(context, postSeleccionado);
                       },
                       child: Card(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10), // Bordes redondeados
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        elevation: 4, // Sombra para diseño más llamativo
+                        elevation: 4,
                         child: Padding(
-                          padding: const EdgeInsets.all(4.0), // Espaciado interno
+                          padding: const EdgeInsets.all(4.0),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center, // Centrar contenido
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              // Imagen del post usando URL
                               if (post['imagenURLpost'] != null && post['imagenURLpost'].isNotEmpty)
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(10), // Redondea la imagen
+                                  borderRadius: BorderRadius.circular(10),
                                   child: AspectRatio(
-                                    aspectRatio: 1.5, // Relación de aspecto
-                                    child: Image.network(
-                                      post['imagenURLpost'][0], // Usamos la URL directamente
-                                      fit: BoxFit.cover, // Muestra la imagen sin recortarla
+                                    aspectRatio: 1.5,
+                                    child: CachedNetworkImage(
+                                      imageUrl: post['imagenURLpost'][0],
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                                      errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.red),
                                     ),
                                   ),
                                 )
@@ -130,7 +133,7 @@ class _FavoritosViewState extends State<FavoritosView> {
                                     ),
                                   ),
                                 ),
-                              SizedBox(height: 8), // Espaciado entre la imagen y el título
+                              SizedBox(height: 8),
                               Text(
                                 post['titulo'] ?? "Sin título",
                                 style: TextStyle(
@@ -138,8 +141,10 @@ class _FavoritosViewState extends State<FavoritosView> {
                                   fontSize: 16,
                                 ),
                                 textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
-                              SizedBox(height: 4), // Espaciado entre el título y la categoría
+                              SizedBox(height: 4),
                               Text(
                                 'Categorías: ${post['categoria']?.join(', ') ?? 'Sin categorías'}',
                                 style: TextStyle(
@@ -147,20 +152,23 @@ class _FavoritosViewState extends State<FavoritosView> {
                                   fontSize: 14,
                                 ),
                                 textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                               SizedBox(height: 4),
                               Text(
                                 'Precio: ${post['precio']?.toString() ?? 'No disponible'} €',
                                 style: TextStyle(fontSize: 14),
                               ),
-                              SizedBox(height: 8), // Espaciado entre el precio y el final del Card
+                              SizedBox(height: 8),
                             ],
                           ),
                         ),
                       ),
                     );
                   },
-                ),
+                )
+
               ],
             ),
           );
