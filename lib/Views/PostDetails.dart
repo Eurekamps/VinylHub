@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -6,6 +7,7 @@ import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../FbObjects/FbFavorito.dart';
+import '../FbObjects/FbPerfil.dart';
 import '../Singletone/DataHolder.dart';
 import 'ChatView.dart';
 
@@ -25,12 +27,14 @@ class _PostDetailsState extends State<PostDetails> {
   String sRutaPerfil =
       "perfiles/${FirebaseAuth.instance.currentUser!.uid}/Favoritos";
   bool _isFavorito = false;
+  FbPerfil? perfilAutor;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: currentIndex);
     _checkIfFavorito(); // Verificar si el post ya es favorito al cargar
+    _cargarPerfilAutor();
   }
 
   @override
@@ -135,6 +139,27 @@ class _PostDetailsState extends State<PostDetails> {
     }
   }
 
+  void _cargarPerfilAutor() async {
+    try {
+      String uidAutor = DataHolder().fbPostSelected!.sAutorUid;
+      DocumentSnapshot<Map<String, dynamic>> doc = await FirebaseFirestore.instance
+          .collection('perfiles')
+          .doc(uidAutor)
+          .get();
+
+      if (doc.exists) {
+        setState(() {
+          perfilAutor = FbPerfil.fromFirestore(doc, null);
+        });
+      } else {
+        print("Perfil del autor no encontrado.");
+      }
+    } catch (e) {
+      print("Error al obtener el perfil del autor: $e");
+    }
+  }
+
+
   Future<void> addPostFavoritos() async {
     String uidPostFavorito = DataHolder().fbPostSelected!.uid;
     FbFavorito nuevoFavorito = FbFavorito(uidPost: uidPostFavorito);
@@ -177,9 +202,38 @@ class _PostDetailsState extends State<PostDetails> {
         leading: IconButton(
           icon: Icon(Icons.close),
           onPressed: () {
-            Navigator.pop(context); // Cerrar la pantalla de detalles
+            Navigator.pop(context);
           },
         ),
+        title: GestureDetector(
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/perfilajeno',
+              arguments: DataHolder().fbPostSelected!.sAutorUid,
+            );
+          },
+          child: Row(
+            children: [
+              ClipOval(
+                child: CachedNetworkImage(
+                  imageUrl: perfilAutor?.imagenURL ?? '',
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => CircularProgressIndicator(),
+                  errorWidget: (context, url, error) => Icon(Icons.error),
+                ),
+              ),
+              SizedBox(width: 10),
+              Text(
+                perfilAutor?.nombre ?? 'Usuario',
+                style: TextStyle(fontSize: 18),
+              ),
+            ],
+          ),
+        ),
+
         actions: [
           IconButton(
             icon: Icon(Icons.share),
@@ -219,13 +273,16 @@ class _PostDetailsState extends State<PostDetails> {
                             },
                             itemCount: images.length,
                             itemBuilder: (context, index) {
-                              return Image.network(
-                                images[index],
+                              return CachedNetworkImage(
+                                imageUrl: images[index],
                                 fit: BoxFit.cover,
                                 width: double.infinity,
+                                placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                                errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.red),
                               );
                             },
                           ),
+
                         ),
                       ),
                       Positioned(

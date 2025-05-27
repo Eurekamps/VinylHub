@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vinylhub/Views/BusquedaView.dart';
 import 'package:vinylhub/Views/ChatView.dart';
 import 'package:vinylhub/Views/FavoritosView.dart';
+import 'package:vinylhub/Views/PerfilAjenoView.dart';
 import 'package:vinylhub/Views/PostDetails.dart';
 import 'package:vinylhub/Views/PostDetailsPropio.dart';
 import 'package:vinylhub/Views/TuPerfil.dart';
@@ -34,7 +35,8 @@ class MyApp extends StatelessWidget{
       '/editprofileview': (context) => EditProfileView(),
       '/favoritosview': (context) => FavoritosView(),
       '/busquedaview': (context) => BusquedaView(),
-      '/postdetailspropio': (context) => PostDetailsPropio(onClose: (){})
+      '/postdetailspropio': (context) => PostDetailsPropio(onClose: (){}),
+      '/postdetailsajeno': (context) => PostDetails(onClose: () {  },),
 
 
     };
@@ -43,7 +45,15 @@ class MyApp extends StatelessWidget{
         title: " Hijos de Flutter",
         routes: rutas,
         initialRoute: '/splashview',
-        debugShowCheckedModeBanner: true
+        debugShowCheckedModeBanner: true,
+        onGenerateRoute: (settings) {
+          if (settings.name == '/perfilajeno') {
+            final uidAjeno = settings.arguments as String;
+            return MaterialPageRoute(
+              builder: (context) => PerfilAjenoView(uidAjeno: uidAjeno),
+            );
+          }
+        },
     );
 
 

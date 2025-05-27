@@ -199,15 +199,20 @@ class _ChatViewState extends State<ChatView> {
           },
           child: Text(DataHolder().fbChatSelected?.sTitulo ?? 'Chat sin título'),
         ),
-        backgroundColor: Colors.grey,
+        backgroundColor: Colors.grey[200],
         actions: [
           PopupMenuButton<int>(
             onSelected: (int value) async {
               if (value == 1) {
-                // Navegar al perfil (si lo necesitas)
+                //Navega al perfil
+                Navigator.pushNamed(
+                  context,
+                  '/perfilajeno',
+                  arguments: DataHolder().fbPostSelected!.sAutorUid,
+                );
               } else if (value == 2) {
-                // Eliminar el chat
-                String chatId = DataHolder().fbChatSelected?.uid ?? '';  // Asegúrate de tener el ID del chat seleccionado
+                //Elimina el chat
+                String chatId = DataHolder().fbChatSelected?.uid ?? '';
 
                 if (chatId.isNotEmpty) {
                   try {

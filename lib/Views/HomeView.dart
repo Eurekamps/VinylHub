@@ -838,11 +838,12 @@ class _HomeViewState extends State<HomeView> {
         title: Center(
           child: Text(
             "VinylHub",
-            style: GoogleFonts.audiowide(
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              color: Colors.black,
+            style: GoogleFonts.poppins(
+              color: Colors.black87,
+              fontSize: 26,
+              fontWeight: FontWeight.w600,
             ),
+            textAlign: TextAlign.center,
           ),
         ),
         actions: [

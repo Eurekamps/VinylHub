@@ -1,7 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:vinylhub/FbObjects/FbFavorito.dart';
 
@@ -71,13 +73,22 @@ class _PostDetailsPropioState extends State<PostDetailsPropio> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(post.titulo),
         leading: IconButton(
           icon: Icon(Icons.close),
           onPressed: () {
             Navigator.pop(context); // Cerrar la pantalla de detalles
           },
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.share),
+            onPressed: () {
+              Share.share(
+                "📀 ${post.titulo}\n💰 ${post.precio} €\n📖 ${post.descripcion ?? "Sin descripción"}",
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -108,13 +119,16 @@ class _PostDetailsPropioState extends State<PostDetailsPropio> {
                             },
                             itemCount: images.length,
                             itemBuilder: (context, index) {
-                              return Image.network(
-                                images[index],
+                              return CachedNetworkImage(
+                                imageUrl: images[index],
                                 fit: BoxFit.cover,
                                 width: double.infinity,
+                                placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                                errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.red),
                               );
                             },
                           ),
+
                         ),
                         Positioned(
                           left: 10,
