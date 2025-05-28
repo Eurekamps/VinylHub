@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../FbObjects/FbPost.dart';
+import '../Singletone/AppNavegacionUtiles.dart';
 import '../Singletone/DataHolder.dart'; // Para decodificar base64
 
 class FavoritosView extends StatefulWidget {
@@ -49,13 +50,7 @@ class _FavoritosViewState extends State<FavoritosView> {
     return query.docs;
   }
 
-  void onPostItem_MasDatosClicked(BuildContext context, FbPost postSeleccionado){
-    DataHolder().fbPostSelected = postSeleccionado;
-    Navigator.of(context).pushNamed('/postdetails');
-    setState(() {
-      blListaPostsVisible = false;
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -95,11 +90,12 @@ class _FavoritosViewState extends State<FavoritosView> {
                     final post = posts[index].data() as Map<String, dynamic>;
 
                     return GestureDetector(
-                      onTap: () {
-                        FbPost postSeleccionado = FbPost.fromFirestore(posts[index]);
-                        onPostItem_MasDatosClicked(context, postSeleccionado);
-                      },
-                      child: Card(
+                        onTap: () {
+                          FbPost postSeleccionado = FbPost.fromFirestore(posts[index]);
+                          AppNavigationUtils.onPostClicked(context, postSeleccionado);
+                        },
+
+                        child: Card(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),

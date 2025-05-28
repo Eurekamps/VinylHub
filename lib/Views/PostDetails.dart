@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:vinylhub/Singletone/AppNavegacionUtiles.dart';
 
 import '../FbObjects/FbFavorito.dart';
 import '../FbObjects/FbPerfil.dart';
@@ -213,6 +214,8 @@ class _PostDetailsState extends State<PostDetails> {
       print("Error al gestionar favoritos: $e");
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -475,7 +478,7 @@ class _PostDetailsState extends State<PostDetails> {
               ),
               SizedBox(height: 24),
 
-              // 🔽 SECCIÓN DE RECOMENDACIONES
+              //seccion de recomendaciones!!!
               Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -491,10 +494,9 @@ class _PostDetailsState extends State<PostDetails> {
                   itemCount: postRecomendaciones.length,
                   itemBuilder: (context, index) {
                     final recPost = postRecomendaciones[index];
-                    return GestureDetector(
+                    return GestureDetector( //navega al post selecionado de la lista de recomendaciones
                       onTap: () {
-                        Navigator.pushNamed(context, '/detallepost',
-                            arguments: recPost);
+                        AppNavigationUtils.onPostClicked(context, recPost);
                       },
                       child: Container(
                         width: 160,
