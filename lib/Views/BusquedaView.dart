@@ -8,6 +8,9 @@ import '../Singletone/DataHolder.dart';
 class BusquedaView extends StatefulWidget {
   @override
   _BusquedaViewState createState() => _BusquedaViewState();
+  final String? generoInicial;
+
+  const BusquedaView({this.generoInicial});
 }
 
 class _BusquedaViewState extends State<BusquedaView> {
@@ -15,6 +18,7 @@ class _BusquedaViewState extends State<BusquedaView> {
   List<FbPost> _allPosts = [];
   List<FbPost> _filteredPosts = [];
   bool blListaPostsVisible = true;
+
 
   @override
   void initState() {
@@ -30,6 +34,12 @@ class _BusquedaViewState extends State<BusquedaView> {
         _allPosts = posts;
         _filteredPosts = posts;
       });
+
+      // Aplica filtro si se pasó un género
+      if (widget.generoInicial != null && widget.generoInicial!.isNotEmpty) {
+        _filterPosts(widget.generoInicial!);
+        _controller.text = widget.generoInicial!;
+      }
     } catch (e) {
       print('Error al cargar los posts: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -37,6 +47,7 @@ class _BusquedaViewState extends State<BusquedaView> {
       );
     }
   }
+
 
   void _filterPosts(String query) {
     if (query.isEmpty) {

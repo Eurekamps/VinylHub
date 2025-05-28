@@ -4,7 +4,7 @@ import 'dart:convert';
 import '../FbObjects/FbPost.dart';
 
 class FbPostService {
-  // Método para obtener los posts desde una API externa
+  //Método para obtener los posts desde una API externa
   Future<List<FbPost>> fetchPostsFromApi() async {
     final response = await http.get(Uri.parse('https://api.example.com/posts'));
 

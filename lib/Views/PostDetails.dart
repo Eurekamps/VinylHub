@@ -8,7 +8,10 @@ import 'package:share_plus/share_plus.dart';
 
 import '../FbObjects/FbFavorito.dart';
 import '../FbObjects/FbPerfil.dart';
+import '../FbObjects/FbPost.dart';
+import '../Services/RecomendationService.dart';
 import '../Singletone/DataHolder.dart';
+import 'BusquedaView.dart';
 import 'ChatView.dart';
 
 class PostDetails extends StatefulWidget {
@@ -28,6 +31,24 @@ class _PostDetailsState extends State<PostDetails> {
       "perfiles/${FirebaseAuth.instance.currentUser!.uid}/Favoritos";
   bool _isFavorito = false;
   FbPerfil? perfilAutor;
+  final RecommendationService _recommendationService = RecommendationService();
+  List<FbPost> postRecomendaciones = [];
+  bool _loadingRecommendations = true;
+
+
+  Future<void> _loadRecommendations() async {
+    final post = DataHolder().fbPostSelected;
+    if (post == null) return;
+
+    final recommendations = await _recommendationService.getRecommendationsForPost(post);
+
+    setState(() {
+      postRecomendaciones = recommendations;
+      _loadingRecommendations = false;
+    });
+  }
+
+
 
   @override
   void initState() {
@@ -35,6 +56,7 @@ class _PostDetailsState extends State<PostDetails> {
     _pageController = PageController(initialPage: currentIndex);
     _checkIfFavorito(); // Verificar si el post ya es favorito al cargar
     _cargarPerfilAutor();
+    _loadRecommendations();
   }
 
   @override
@@ -233,7 +255,6 @@ class _PostDetailsState extends State<PostDetails> {
             ],
           ),
         ),
-
         actions: [
           IconButton(
             icon: Icon(Icons.share),
@@ -277,35 +298,40 @@ class _PostDetailsState extends State<PostDetails> {
                                 imageUrl: images[index],
                                 fit: BoxFit.cover,
                                 width: double.infinity,
-                                placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.red),
+                                placeholder: (context, url) =>
+                                    Center(child: CircularProgressIndicator()),
+                                errorWidget: (context, url, error) =>
+                                    Icon(Icons.error, color: Colors.red),
                               );
                             },
                           ),
-
                         ),
                       ),
                       Positioned(
                         left: 10,
                         top: 130,
                         child: IconButton(
-                          icon: Icon(Icons.arrow_back, size: 30, color: Colors.black),
-                          onPressed: currentIndex > 0 ? _previousImage : null,
+                          icon: Icon(Icons.arrow_back,
+                              size: 30, color: Colors.black),
+                          onPressed:
+                          currentIndex > 0 ? _previousImage : null,
                         ),
                       ),
                       Positioned(
                         right: 10,
                         top: 130,
                         child: IconButton(
-                          icon: Icon(Icons.arrow_forward, size: 30, color: Colors.black),
-                          onPressed: currentIndex < images.length - 1 ? _nextImage : null,
+                          icon: Icon(Icons.arrow_forward,
+                              size: 30, color: Colors.black),
+                          onPressed: currentIndex < images.length - 1
+                              ? _nextImage
+                              : null,
                         ),
                       ),
                     ],
                   ),
                 ),
               SizedBox(height: 16),
-
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -322,7 +348,6 @@ class _PostDetailsState extends State<PostDetails> {
                 ),
               ),
               SizedBox(height: 16),
-
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -339,7 +364,6 @@ class _PostDetailsState extends State<PostDetails> {
                 ),
               ),
               SizedBox(height: 16),
-
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -351,30 +375,86 @@ class _PostDetailsState extends State<PostDetails> {
                 ),
                 child: Text(
                   "${post.precio} €",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[700]),
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[700]),
                   textAlign: TextAlign.center,
                 ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black12, blurRadius: 4),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Géneros:",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: post.categoria.map((cat) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BusquedaView(generoInicial: cat),
+                              ),
+                            );
+                          },
+                          child: Chip(
+                            label: Text(cat, style: TextStyle(color: Colors.white)),
+                            backgroundColor: Colors.deepPurple,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    )
+                  ],
+                ),
+              ),
 
+              SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton.icon(
                     onPressed: crearNuevoChat,
                     icon: Icon(Icons.chat, color: Colors.white),
-                    label: Text("Chat", style: TextStyle(color: Colors.white)),
+                    label:
+                    Text("Chat", style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blueAccent,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   SizedBox(width: 16),
                   ElevatedButton.icon(
                     onPressed: addPostFavoritos,
                     icon: Icon(
-                      _isFavorito ? Icons.favorite : Icons.favorite_border,
+                      _isFavorito
+                          ? Icons.favorite
+                          : Icons.favorite_border,
                       color: Colors.white,
                     ),
                     label: Text(
@@ -382,40 +462,128 @@ class _PostDetailsState extends State<PostDetails> {
                       style: TextStyle(color: Colors.white),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _isFavorito ? Colors.red : Colors.grey,
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      backgroundColor:
+                      _isFavorito ? Colors.red : Colors.grey,
+                      padding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   SizedBox(width: 16),
                 ],
               ),
+              SizedBox(height: 24),
+
+              // 🔽 SECCIÓN DE RECOMENDACIONES
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "También te puede interesar",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              SizedBox(height: 12),
+              SizedBox(
+                height: 220,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: postRecomendaciones.length,
+                  itemBuilder: (context, index) {
+                    final recPost = postRecomendaciones[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/detallepost',
+                            arguments: recPost);
+                      },
+                      child: Container(
+                        width: 160,
+                        margin: EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 4,
+                                offset: Offset(2, 2)),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(12)),
+                              child: CachedNetworkImage(
+                                imageUrl: recPost.imagenURLpost.first,
+                                height: 120,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) =>
+                                    Center(child: CircularProgressIndicator()),
+                                errorWidget: (context, url, error) =>
+                                    Icon(Icons.error),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                recPost.titulo,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ),
+                            Padding(
+                              padding:
+                              const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Text(
+                                "${recPost.precio} €",
+                                style: TextStyle(
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              SizedBox(height: 24),
             ],
           ),
         ),
       ),
-      // Botón de comprar fijo abajo
       bottomNavigationBar: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border(top: BorderSide(color: Colors.black12, width: 1)), // Línea superior para separar
+          border: Border(
+              top: BorderSide(color: Colors.black12, width: 1)),
         ),
         child: ElevatedButton.icon(
           onPressed: () {
             // Acción al presionar el botón de comprar
           },
           icon: Icon(Icons.shopping_cart),
-          label: Text("Comprar", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          label: Text("Comprar",
+              style:
+              TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.green,
             foregroundColor: Colors.white,
             padding: EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
           ),
         ),
       ),
     );
   }
+
 
 }

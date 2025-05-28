@@ -82,7 +82,7 @@ class _ProfileViewState extends State<ProfileView> {
 
       await FirebaseAdmin().crearPerfil(perfil);
       setState(() => blUploading = false);
-      Navigator.of(context).pushNamed('/loginview');
+      Navigator.of(context).pushNamed('/homeview');
     }
   }
 
