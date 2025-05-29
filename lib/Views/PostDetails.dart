@@ -92,29 +92,25 @@ class _PostDetailsState extends State<PostDetails> {
     }
   }
 
-  void crearNuevoChat() async {
+  Future<FbChat> crearNuevoChat() async {
     String uidPost = DataHolder().fbPostSelected!.uid;
     String sPostAutorUid = DataHolder().fbPostSelected!.sAutorUid;
     String sAutorUid = FirebaseAuth.instance.currentUser!.uid;
 
-    // Busca si ya existe un chat entre el usuario actual y el creador del post
     var chatQuery = await _firestore
         .collection('Chats')
-        .where('uidPost', isEqualTo: uidPost) // Filtra por el post actual
-        .where('sPostAutorUid', isEqualTo: sPostAutorUid) // Filtra por el vendedor
-        .where('sAutorUid', isEqualTo: sAutorUid) // Filtra por el comprador (usuario actual)
+        .where('uidPost', isEqualTo: uidPost)
+        .where('sPostAutorUid', isEqualTo: sPostAutorUid)
+        .where('sAutorUid', isEqualTo: sAutorUid)
         .limit(1)
         .get();
 
     if (chatQuery.docs.isNotEmpty) {
-      // Si el chat ya existe, accede a él
       var chatDoc = chatQuery.docs.first;
-      DataHolder().fbChatSelected = FbChat.fromFirestore(chatDoc, null);
-      Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => ChatView())
-      );
+      FbChat chatExistente = FbChat.fromFirestore(chatDoc, null);
+      DataHolder().fbChatSelected = chatExistente;
+      return chatExistente;
     } else {
-      // Si no existe un chat, crea uno nuevo
       String uid = FirebaseFirestore.instance.collection('Chats').doc().id;
       String titulo = DataHolder().fbPostSelected!.titulo;
       String imagenChat = DataHolder().fbPostSelected!.imagenURLpost[0];
@@ -129,16 +125,14 @@ class _PostDetailsState extends State<PostDetails> {
         sPostAutorUid: sPostAutorUid,
       );
 
-      // Guarda el nuevo chat en Firestore
       await _firestore.collection('Chats').doc(uid).set(nuevoChat.toFirestore());
 
-      // Navega al nuevo chat
       DataHolder().fbChatSelected = nuevoChat;
-      Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => ChatView())
-      );
+      return nuevoChat;
     }
   }
+
+
 
   Future<void> _checkIfFavorito() async {
     // Identificar el ID del post y el usuario
@@ -439,8 +433,11 @@ class _PostDetailsState extends State<PostDetails> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ElevatedButton.icon(
-                    onPressed: crearNuevoChat,
-                    icon: Icon(Icons.chat, color: Colors.white),
+                  onPressed: () async {
+                  await AppNavigationUtils.crearNuevoChat();
+                  Navigator.of(context).pushNamed('/chatview');
+                  },
+                  icon: Icon(Icons.chat, color: Colors.white),
                     label:
                     Text("Chat", style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(

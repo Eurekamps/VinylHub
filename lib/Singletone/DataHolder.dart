@@ -25,24 +25,27 @@ class DataHolder {
     platformAdmin = PlatformAdmin(context: context);
   }
 
-  Future<void> obtenerPerfilDeFirestore(String uid) async {
+  Future<FbPerfil?> obtenerPerfilDeFirestore(String uid) async {
     try {
-      // Accede al perfil del usuario en la colección 'Perfiles' usando su UID
       DocumentSnapshot<Map<String, dynamic>> doc = await FirebaseFirestore.instance
           .collection('perfiles')
           .doc(uid)
           .get();
 
       if (doc.exists) {
-        // Asigna el perfil a miPerfil
-        DataHolder().miPerfil = FbPerfil.fromFirestore(doc, null);
+        FbPerfil perfil = FbPerfil.fromFirestore(doc, null);
+        DataHolder().miPerfil = perfil;
+        return perfil;
       } else {
         print("Perfil no encontrado.");
+        return null;
       }
     } catch (e) {
       print("Error al obtener el perfil: $e");
+      return null;
     }
   }
+
 
 
   Future<List<FbChat>> descargarTodosChats() async {

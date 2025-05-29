@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:vinylhub/FbObjects/FbChat.dart';
+import 'package:vinylhub/Singletone/AppNavegacionUtiles.dart';
 
 import '../FbObjects/FbMensaje.dart';
 import '../FbObjects/FbPerfil.dart';
@@ -102,27 +103,42 @@ class _ChatViewState extends State<ChatView> {
 
 
   void presionarEnvio() async {
-    // Asegúrate de que el perfil esté disponible
     FbPerfil? perfil = DataHolder().miPerfil;
-
     if (perfil == null) {
-      // Si el perfil no está cargado o es null, muestra un error
       print("Error: El perfil no está disponible.");
-      return;  // Salimos de la función para evitar que se intente enviar el mensaje sin perfil
+      return;
     }
 
-    // Si el perfil está disponible, puedes continuar con el envío del mensaje
+    if (DataHolder().fbChatSelected == null) {
+      await AppNavigationUtils.crearNuevoChat();
+    }
+
+    final firestore = FirebaseFirestore.instance;
+    FbChat chat = DataHolder().fbChatSelected!;
+
+    // Si el chat todavía no está en Firestore, lo insertamos ahora
+    final docSnapshot = await firestore.collection("Chats").doc(chat.uid).get();
+    if (!docSnapshot.exists) {
+      await firestore.collection("Chats").doc(chat.uid).set(chat.toFirestore());
+    }
+
+    String sRutaChatMensajes = "/Chats/${chat.uid}/mensajes";
+
     FbMensaje nuevoMensaje = FbMensaje(
       sCuerpo: controller.text,
       tmCreacion: Timestamp.now(),
       sImgUrl: imgcontroller.text,
       sAutorUid: FirebaseAuth.instance.currentUser!.uid,
-      sAutorNombre: perfil.nombre, // Usamos el nombre del perfil
+      sAutorNombre: perfil.nombre,
     );
 
-    var nuevoDoc = await db.collection(sRutaChatMensajes).add(nuevoMensaje.toFirestore());
+    await firestore.collection(sRutaChatMensajes).add(nuevoMensaje.toFirestore());
+
     controller.clear();
   }
+
+
+
 
 
   bool esMensajePropio(FbMensaje mensaje) {
@@ -277,7 +293,16 @@ class _ChatViewState extends State<ChatView> {
                     content: mensaje.sCuerpo,
                     isSender: esPropio,
                     imageUrl: mensaje.sImgUrl.isNotEmpty ? mensaje.sImgUrl : null,
+                    uidAutor: mensaje.sAutorUid,
+                    onAvatarTap: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/perfilajeno',
+                        arguments: mensaje.sAutorUid,
+                      );
+                    },
                   );
+
                 }
 
             ),
@@ -337,52 +362,58 @@ class MessageBubble extends StatelessWidget {
   final String content;
   final bool isSender;
   final String? imageUrl;
+  final String? uidAutor; // UID del autor del mensaje
+  final VoidCallback? onAvatarTap; // Acción al tocar el avatar
 
   const MessageBubble({
-    Key? key,
+    super.key,
     required this.content,
     required this.isSender,
     this.imageUrl,
-  }) : super(key: key);
+    this.uidAutor,
+    this.onAvatarTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final alignment =
-    isSender ? Alignment.centerRight : Alignment.centerLeft;
-    final color = isSender ? Colors.teal[100] : Colors.grey[300];
-    final textColor = isSender ? Colors.black : Colors.black87;
+    final message = Container(
+      padding: const EdgeInsets.all(10),
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+      decoration: BoxDecoration(
+        color: isSender ? Colors.blue[200] : Colors.grey[300],
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Text(content),
+    );
 
-    return Align(
-      alignment: alignment,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(15),
-            topRight: Radius.circular(15),
-            bottomLeft: isSender ? Radius.circular(15) : Radius.zero,
-            bottomRight: isSender ? Radius.zero : Radius.circular(15),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment:
-          isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            if (imageUrl != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Image.network(imageUrl!, width: 200, height: 150),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+      child: Row(
+        mainAxisAlignment: isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isSender) // Solo mostramos el avatar en mensajes del otro
+            GestureDetector(
+              onTap: onAvatarTap,
+              child: FutureBuilder<FbPerfil?>(
+                future: DataHolder().obtenerPerfilDeFirestore(uidAutor ?? ''),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircleAvatar(radius: 18, backgroundColor: Colors.grey);
+                  } else if (snapshot.hasData && snapshot.data != null) {
+                    return CircleAvatar(
+                      radius: 18,
+                      backgroundImage: NetworkImage(snapshot.data!.imagenURL),
+                    );
+                  } else {
+                    return const CircleAvatar(radius: 18, child: Icon(Icons.person));
+                  }
+                },
               ),
-            Text(
-              content,
-              style: TextStyle(color: textColor),
             ),
-          ],
-        ),
+          const SizedBox(width: 8),
+          message,
+        ],
       ),
     );
   }
-
 }
