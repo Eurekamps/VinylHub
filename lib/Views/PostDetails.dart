@@ -217,44 +217,40 @@ class _PostDetailsState extends State<PostDetails> {
     var images = post.imagenURLpost;
 
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
         leading: IconButton(
-          icon: Icon(Icons.close),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: Icon(Icons.close, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
         title: GestureDetector(
           onTap: () {
             Navigator.pushNamed(
               context,
               '/perfilajeno',
-              arguments: DataHolder().fbPostSelected!.sAutorUid,
+              arguments: post.sAutorUid,
             );
           },
           child: Row(
             children: [
-              ClipOval(
-                child: CachedNetworkImage(
-                  imageUrl: perfilAutor?.imagenURL ?? '',
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => CircularProgressIndicator(),
-                  errorWidget: (context, url, error) => Icon(Icons.error),
-                ),
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage(perfilAutor?.imagenURL ?? ''),
+                backgroundColor: Colors.grey[300],
               ),
               SizedBox(width: 10),
               Text(
                 perfilAutor?.nombre ?? 'Usuario',
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(color: Colors.black, fontSize: 16),
               ),
             ],
           ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.share),
+            icon: Icon(Icons.share, color: Colors.black),
             onPressed: () {
               Share.share(
                 "📀 ${post.titulo}\n💰 ${post.precio} €\n📖 ${post.descripcion ?? "Sin descripción"}",
@@ -264,325 +260,189 @@ class _PostDetailsState extends State<PostDetails> {
         ],
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (images.isNotEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  padding: EdgeInsets.all(8),
-                  child: Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: SizedBox(
-                          height: 300,
-                          child: PageView.builder(
-                            controller: _pageController,
-                            onPageChanged: (index) {
-                              setState(() {
-                                currentIndex = index;
-                              });
-                            },
-                            itemCount: images.length,
-                            itemBuilder: (context, index) {
-                              return CachedNetworkImage(
-                                imageUrl: images[index],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                placeholder: (context, url) =>
-                                    Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) =>
-                                    Icon(Icons.error, color: Colors.red),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 10,
-                        top: 130,
-                        child: IconButton(
-                          icon: Icon(Icons.arrow_back,
-                              size: 30, color: Colors.black),
-                          onPressed:
-                          currentIndex > 0 ? _previousImage : null,
-                        ),
-                      ),
-                      Positioned(
-                        right: 10,
-                        top: 130,
-                        child: IconButton(
-                          icon: Icon(Icons.arrow_forward,
-                              size: 30, color: Colors.black),
-                          onPressed: currentIndex < images.length - 1
-                              ? _nextImage
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 4),
-                  ],
-                ),
-                child: Text(
-                  post.titulo,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 4),
-                  ],
-                ),
-                child: Text(
-                  post.descripcion ?? "Sin descripción",
-                  style: TextStyle(fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 4),
-                  ],
-                ),
-                child: Text(
-                  "${post.precio} €",
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[700]),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 4),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Géneros:",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (images.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: SizedBox(
+                  height: 260,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    onPageChanged: (index) => setState(() => currentIndex = index),
+                    itemCount: images.length,
+                    itemBuilder: (context, index) => CachedNetworkImage(
+                      imageUrl: images[index],
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) => Icon(Icons.error),
                     ),
-                    SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: post.categoria.map((cat) {
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => BusquedaView(generoInicial: cat),
-                              ),
-                            );
-                          },
-                          child: Chip(
-                            label: Text(cat, style: TextStyle(color: Colors.white)),
-                            backgroundColor: Colors.deepPurple,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    )
-                  ],
+                  ),
                 ),
               ),
+            SizedBox(height: 16),
 
-              SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            // Sección de información del post
+            Container(
+              padding: EdgeInsets.all(12),
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ElevatedButton.icon(
-                  onPressed: () async {
-                  await AppNavigationUtils.crearNuevoChat();
-                  Navigator.of(context).pushNamed('/chatview');
-                  },
-                  icon: Icon(Icons.chat, color: Colors.white),
-                    label:
-                    Text("Chat", style: TextStyle(color: Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      padding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  ElevatedButton.icon(
-                    onPressed: addPostFavoritos,
-                    icon: Icon(
-                      _isFavorito
-                          ? Icons.favorite
-                          : Icons.favorite_border,
-                      color: Colors.white,
-                    ),
-                    label: Text(
-                      _isFavorito ? "Eliminar" : "Añadir",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                      _isFavorito ? Colors.red : Colors.grey,
-                      padding:
-                      EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                  SizedBox(width: 16),
+                  Text(post.titulo, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 4),
+                  Text("Artista: ${post.artista}", style: TextStyle(fontSize: 16)),
+                  SizedBox(height: 8),
+                  Text("${post.precio} €", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                 ],
               ),
-              SizedBox(height: 24),
+            ),
+            SizedBox(height: 16),
 
-              //seccion de recomendaciones!!!
-              Align(
-                alignment: Alignment.centerLeft,
+            // Categorías
+            Container(
+              padding: EdgeInsets.all(12),
+              color: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Categorías:", style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    children: post.categoria.map((cat) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => BusquedaView(generoInicial: cat)),
+                          );
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(cat, style: TextStyle(color: Colors.white, fontSize: 13)),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+
+            // Descripción
+            if (post.descripcion != null && post.descripcion!.isNotEmpty)
+              Container(
+                padding: EdgeInsets.all(12),
+                color: Colors.white,
                 child: Text(
-                  "También te puede interesar",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  post.descripcion!,
+                  style: TextStyle(fontSize: 15),
                 ),
               ),
+
+            SizedBox(height: 20),
+
+            // Botones de acción
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: Icon(Icons.chat),
+                    label: Text("Chat"),
+                    onPressed: () async {
+                      await AppNavigationUtils.crearNuevoChat();
+                      Navigator.of(context).pushNamed('/chatview');
+                    },
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: Icon(_isFavorito ? Icons.favorite : Icons.favorite_border),
+                    label: Text(_isFavorito ? "Eliminar" : "Añadir"),
+                    onPressed: addPostFavoritos,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _isFavorito ? Colors.red : Colors.black,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: 24),
+
+            // Recomendaciones
+            if (postRecomendaciones.isNotEmpty) ...[
+              Text("También te puede interesar", style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 12),
               SizedBox(
                 height: 220,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: postRecomendaciones.length,
-                  itemBuilder: (context, index) {
-                    final recPost = postRecomendaciones[index];
-                    return GestureDetector( //navega al post selecionado de la lista de recomendaciones
-                      onTap: () {
-                        AppNavigationUtils.onPostClicked(context, recPost);
-                      },
-                      child: Container(
-                        width: 160,
-                        margin: EdgeInsets.only(right: 12),
-                        decoration: BoxDecoration(
+                    itemBuilder: (context, index) {
+                      final recPost = postRecomendaciones[index];
+
+                      // Excluir posts del propio usuario
+                      if (recPost.sAutorUid == DataHolder().miPerfil?.uid) {
+                        return const SizedBox.shrink(); // No renderiza nada
+                      }
+
+                      return GestureDetector(
+                        onTap: () => AppNavigationUtils.onPostClicked(context, recPost),
+                        child: Container(
+                          width: 160,
+                          margin: const EdgeInsets.only(right: 12),
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 4,
-                                offset: Offset(2, 2)),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(12)),
-                              child: CachedNetworkImage(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CachedNetworkImage(
                                 imageUrl: recPost.imagenURLpost.first,
                                 height: 120,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
-                                placeholder: (context, url) =>
-                                    Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) =>
-                                    Icon(Icons.error),
                               ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Text(
-                                recPost.titulo,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 14),
-                              ),
-                            ),
-                            Padding(
-                              padding:
-                              const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Text(
-                                "${recPost.precio} €",
-                                style: TextStyle(
-                                    color: Colors.green[700],
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ],
+                              Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      recPost.titulo,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      "${recPost.precio} €",
+                                      style: const TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    }
+
+
                 ),
               ),
-              SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(
-              top: BorderSide(color: Colors.black12, width: 1)),
-        ),
-        child: ElevatedButton.icon(
-          onPressed: () {
-            // Acción al presionar el botón de comprar
-          },
-          icon: Icon(Icons.shopping_cart),
-          label: Text("Comprar",
-              style:
-              TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green,
-            foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-          ),
+            ]
+          ],
         ),
       ),
     );
   }
+
 
 
 }

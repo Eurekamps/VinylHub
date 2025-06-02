@@ -12,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:convert'; // Para convertir la imagen a base64
 import 'dart:typed_data'; // Para trabajar con bytes de la imagen
 import 'package:image/image.dart' as img;
+import '../FbObjects/FbPerfil.dart';
 import '../FbObjects/FbPost.dart';
 import '../Services/DiscogsService.dart';
 import '../Singletone/DataHolder.dart';
@@ -57,6 +58,8 @@ class _HomeViewState extends State<HomeView> {
       arChats.addAll(arTemp);
     });
   }
+
+
 
   Widget? _chatItemBuilder(BuildContext contexto, int indice) {
     return GestureDetector(
@@ -815,21 +818,6 @@ class _HomeViewState extends State<HomeView> {
       ),
     );
   }
-
-
-
-
-
-  String _limpiarBase64(String base64String) {
-    if (base64String.startsWith('data:image')) {
-      final index = base64String.indexOf('base64,');
-      if (index != -1) {
-        return base64String.substring(index + 7);
-      }
-    }
-    return base64String;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

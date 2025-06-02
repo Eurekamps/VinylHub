@@ -47,7 +47,10 @@ class _ChatViewState extends State<ChatView> {
     setState(() {
       isLoading = false;
     });
+    print("Perfil cargado en initState con UID: ${DataHolder().miPerfil?.uid}");
+
   }
+
 
 
   int compararArray(FbMensaje a, FbMensaje b){
@@ -178,34 +181,57 @@ class _ChatViewState extends State<ChatView> {
     }
   }
 
+  Future<void> actualizarMiPerfil() async {
+    try {
+      String uid = FirebaseAuth.instance.currentUser!.uid;
+
+      DocumentSnapshot<Map<String, dynamic>> perfilSnapshot = await FirebaseFirestore.instance
+          .collection('perfiles')
+          .doc(uid)
+          .get();
+
+      if (perfilSnapshot.exists) {
+        DataHolder().miPerfil = FbPerfil.fromFirestore(perfilSnapshot, null);
+        print('Perfil actualizado correctamente: ${DataHolder().miPerfil!.uid}');
+      } else {
+        print('No se encontró el perfil del usuario');
+      }
+    } catch (e) {
+      print("Error al actualizar perfil: $e");
+    }
+  }
+
+
+
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.grey[200],
         title: GestureDetector(
           onTap: () async {
-            // Actualizar fbPostSelected antes de navegar
+            // actualizar fbPostSelected antes de navegar
             await actualizarFbPostSelected();
+            await actualizarMiPerfil();
+            print('Autor del post: ${DataHolder().fbPostSelected?.sAutorUid}');
+            print('Usuario actual: ${DataHolder().miPerfil?.uid}');
 
-            // Verificamos que fbPostSelected está asignado antes de navegar
+
             if (DataHolder().fbPostSelected != null) {
-              String usuarioActualUid = DataHolder().miPerfil?.uid ?? ''; // Asegúrate de que el uid del usuario esté disponible
-
-              // Comprobar si el autor del post es el mismo que el usuario actual
+              String usuarioActualUid = DataHolder().miPerfil?.uid ?? '';
               if (DataHolder().fbPostSelected!.sAutorUid == usuarioActualUid) {
-                // Si el post fue creado por el usuario actual, navegar a PostDetailsPropio
                 Navigator.pushNamed(
                   context,
-                  '/postdetailspropio',  // Ruta al detalle del post propio
-                  arguments: DataHolder().fbPostSelected,  // Pasamos el objeto FbPost completo
+                  '/postdetailspropio',
+                  arguments: DataHolder().fbPostSelected,
                 );
               } else {
-                // Si el post no fue creado por el usuario actual, navegar a PostDetails
                 Navigator.pushNamed(
                   context,
-                  '/postdetails',  // Ruta al detalle del post
-                  arguments: DataHolder().fbPostSelected,  // Pasamos el objeto FbPost completo
+                  '/postdetails',
+                  arguments: DataHolder().fbPostSelected,
                 );
               }
             } else {
@@ -213,32 +239,48 @@ class _ChatViewState extends State<ChatView> {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No se encontró el post relacionado.")));
             }
           },
-          child: Text(DataHolder().fbChatSelected?.sTitulo ?? 'Chat sin título'),
+          child: Row(
+            children: [
+              if (DataHolder().fbChatSelected?.sImagenURL != null &&
+                  DataHolder().fbChatSelected!.sImagenURL.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    DataHolder().fbChatSelected!.sImagenURL,
+                    width: 36,
+                    height: 36,
+                    fit: BoxFit.cover,
+                  ),
+                )
+              else
+                const SizedBox(width: 36, height: 36),
+
+              const SizedBox(width: 8),
+
+              // Título del post
+              Expanded(
+                child: Text(
+                  DataHolder().fbChatSelected?.sTitulo ?? 'Chat sin título',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.black),
+                ),
+              ),
+            ],
+          ),
         ),
-        backgroundColor: Colors.grey[200],
         actions: [
           PopupMenuButton<int>(
             onSelected: (int value) async {
               if (value == 1) {
-                //Navega al perfil
-                Navigator.pushNamed(
-                  context,
-                  '/perfilajeno',
-                  arguments: DataHolder().fbPostSelected!.sAutorUid,
-                );
-              } else if (value == 2) {
-                //Elimina el chat
                 String chatId = DataHolder().fbChatSelected?.uid ?? '';
 
                 if (chatId.isNotEmpty) {
                   try {
-                    // Eliminar el chat de Firestore
                     await FirebaseFirestore.instance
-                        .collection('Chats')  // Asegúrate de usar la colección correcta
+                        .collection('Chats')
                         .doc(chatId)
                         .delete();
 
-                    // Eliminar los mensajes asociados si es necesario
                     await FirebaseFirestore.instance
                         .collection('Chats')
                         .doc(chatId)
@@ -261,10 +303,6 @@ class _ChatViewState extends State<ChatView> {
             itemBuilder: (BuildContext context) => <PopupMenuEntry<int>>[
               const PopupMenuItem<int>(
                 value: 1,
-                child: Text('Ver Perfil'),
-              ),
-              const PopupMenuItem<int>(
-                value: 2,
                 child: Text('Eliminar Chat'),
               ),
             ],
