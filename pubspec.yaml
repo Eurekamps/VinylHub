@@ -16,6 +16,8 @@ dependencies:
   firebase_auth: ^5.3.3
   cloud_firestore: ^5.5.0
   firebase_storage: ^12.1.0
+  firebase_messaging: ^15.1.6
+
 
   google_fonts: ^6.2.1
   image_picker: ^1.1.2
@@ -25,12 +27,14 @@ dependencies:
   image: ^4.0.15
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
+  geolocator: ^10.0.0
 
   cupertino_icons: ^1.0.8
   firebase_remote_config: ^5.2.0
   share_plus: ^10.1.4
   flutter_launcher_icons: ^0.14.3
   google_sign_in: ^6.2.2
+  provider: ^6.0.0
 
 flutter_icons:
   android: true
