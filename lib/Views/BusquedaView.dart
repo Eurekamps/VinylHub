@@ -26,6 +26,16 @@ class _BusquedaViewState extends State<BusquedaView> {
     _loadPosts();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final arg = ModalRoute.of(context)?.settings.arguments;
+    if (arg != null && arg is String) {
+      _controller.text = arg;
+      _filterPosts(arg);
+    }
+  }
+
   void _loadPosts() async {
     try {
       final snapshot = await FirebaseFirestore.instance.collection('Posts').get();
@@ -80,7 +90,14 @@ class _BusquedaViewState extends State<BusquedaView> {
       blListaPostsVisible = false;
     });
   }
-  
+
+  void onVinylSelected(String title, String artist) {
+    final query = '$title $artist';
+    _controller.text = query;
+    _filterPosts(query);
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -94,8 +111,21 @@ class _BusquedaViewState extends State<BusquedaView> {
               _filterPosts(_controller.text);
             },
           ),
+          IconButton(
+            icon: Icon(Icons.photo_camera),
+            tooltip: 'Buscar con imagen',
+            onPressed: () async {
+              final queryFromImage = await Navigator.pushNamed(context, '/busquedaimagen');
+              if (queryFromImage != null && queryFromImage is String) {
+                _controller.text = queryFromImage;
+                _filterPosts(queryFromImage);
+              }
+            },
+          ),
+
         ],
       ),
+
       body: Column(
         children: [
           Padding(

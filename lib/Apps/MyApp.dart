@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:provider/provider.dart';
+import 'package:vinylhub/Views/BusquedaImagen.dart';
 import 'package:vinylhub/Views/BusquedaView.dart';
 import 'package:vinylhub/Views/ChatView.dart';
 import 'package:vinylhub/Views/EditPost.dart';
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget{
       '/postdetailspropio': (context) => PostDetailsPropio(onClose: (){}),
       '/postdetailsajeno': (context) => PostDetails(onClose: () {  },),
       '/ajustesview': (context) => const AjustesView(),
+      '/busquedaimagen': (context) => BusquedaImagen()
 
 
     };
