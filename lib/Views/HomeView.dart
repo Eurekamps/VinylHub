@@ -433,7 +433,7 @@ class _HomeViewState extends State<HomeView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Campo de título del disco con búsqueda
+            // Campo de título
             TextField(
               controller: _tituloController,
               decoration: InputDecoration(
@@ -450,7 +450,7 @@ class _HomeViewState extends State<HomeView> {
             ),
             const SizedBox(height: 10),
 
-            // Campo del artista
+            // Campo artista
             TextField(
               controller: _artistaController,
               decoration: InputDecoration(
@@ -461,7 +461,7 @@ class _HomeViewState extends State<HomeView> {
             ),
             const SizedBox(height: 10),
 
-            // Sugerencias
+            // Sugerencias Discogs
             if (_results.isNotEmpty)
               Container(
                 constraints: BoxConstraints(maxHeight: 200),
@@ -477,10 +477,12 @@ class _HomeViewState extends State<HomeView> {
                           _tituloController.text = item['title'] ?? '';
                           _artistaController.text = _separarArtista(item['title'] ?? '');
                           _anioEdicionController.text = item['year'] ?? '';
+
                           final genre = item['genre']?.isNotEmpty == true ? item['genre'][0] : null;
                           if (genre != null && !_categoriasSeleccionadas.contains(genre)) {
                             _categoriasSeleccionadas.add(genre);
                           }
+
                           _results.clear();
                         });
                       },
@@ -490,7 +492,7 @@ class _HomeViewState extends State<HomeView> {
               ),
             const SizedBox(height: 10),
 
-            // Año
+            // Año de edición
             TextField(
               controller: _anioEdicionController,
               decoration: InputDecoration(
@@ -552,7 +554,7 @@ class _HomeViewState extends State<HomeView> {
             ),
             const SizedBox(height: 10),
 
-            // Chips de categorías seleccionadas
+            // Chips de categorías
             Wrap(
               spacing: 8.0,
               children: _categoriasSeleccionadas.map((categoria) {
@@ -568,7 +570,7 @@ class _HomeViewState extends State<HomeView> {
             ),
             const SizedBox(height: 10),
 
-            // Botones de imagen
+            // Botones galería y cámara
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -586,48 +588,71 @@ class _HomeViewState extends State<HomeView> {
             ),
             const SizedBox(height: 10),
 
-            // Imágenes seleccionadas estilo moderno
+            // Imágenes seleccionadas como cards horizontales
             if (_imagenURLs.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("Imágenes seleccionadas:",
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 120,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _imagenURLs.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 10),
-                      itemBuilder: (context, index) {
-                        final url = _imagenURLs[index];
-                        return Stack(
-                          alignment: Alignment.topRight,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                url,
-                                height: 120,
-                                width: 120,
-                                fit: BoxFit.cover,
-                              ),
+              SizedBox(
+                height: 120,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      ..._imagenURLs.map((image) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
                             ),
-                            IconButton(
-                              icon: Icon(Icons.close, color: Colors.red),
-                              onPressed: () => _eliminarImagen(index),
+                            elevation: 3,
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(15),
+                                  child: Image.network(
+                                    image,
+                                    height: 100,
+                                    width: 100,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: IconButton(
+                                    icon: Icon(Icons.cancel, color: Colors.red),
+                                    onPressed: () {
+                                      _eliminarImagen(_imagenURLs.indexOf(image));
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         );
-                      },
-                    ),
+                      }).toList(),
+
+                      // Botón "+"
+                      GestureDetector(
+                        onTap: _seleccionarImagenDesdeGaleria,
+                        child: Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Center(
+                            child: Icon(Icons.add, size: 40, color: Colors.grey),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             const SizedBox(height: 20),
 
-            // Botón de creación
+            // Botón crear post
             Center(
               child: ElevatedButton(
                 onPressed: _agregarPost,
@@ -639,6 +664,7 @@ class _HomeViewState extends State<HomeView> {
       ),
     );
   }
+
 
 
 //funcion para extraer el nombre del artista del titulo del disco
