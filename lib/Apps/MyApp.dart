@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:provider/provider.dart';
 import 'package:vinylhub/Views/BusquedaView.dart';
 import 'package:vinylhub/Views/ChatView.dart';
+import 'package:vinylhub/Views/EditPost.dart';
 import 'package:vinylhub/Views/FavoritosView.dart';
 import 'package:vinylhub/Views/PerfilAjenoView.dart';
 import 'package:vinylhub/Views/PostDetails.dart';

@@ -8,7 +8,9 @@ import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:vinylhub/FbObjects/FbFavorito.dart';
 
 import '../Singletone/DataHolder.dart';
+import 'BusquedaView.dart';
 import 'ChatView.dart';
+import 'EditPost.dart';
 
 class PostDetailsPropio extends StatefulWidget{
 
@@ -69,19 +71,38 @@ class _PostDetailsPropioState extends State<PostDetailsPropio> {
   @override
   Widget build(BuildContext context) {
     var post = DataHolder().fbPostSelected!;
-    var images = post.imagenURLpost; // Lista de URLs de imágenes
+    var images = post.imagenURLpost;
 
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
         leading: IconButton(
-          icon: Icon(Icons.close),
-          onPressed: () {
-            Navigator.pop(context); // Cerrar la pantalla de detalles
-          },
+          icon: Icon(Icons.close, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.share),
+            icon: Icon(Icons.edit, color: Colors.black87),
+            onPressed: () async {
+              final updatedPost = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditPost(post: post),
+                ),
+              );
+
+              if (updatedPost != null) {
+                setState(() {
+                  DataHolder().fbPostSelected = updatedPost;
+                });
+              }
+            },
+
+          ),
+          IconButton(
+            icon: Icon(Icons.share, color: Colors.black),
             onPressed: () {
               Share.share(
                 "📀 ${post.titulo}\n💰 ${post.precio} €\n📖 ${post.descripcion ?? "Sin descripción"}",
@@ -91,135 +112,125 @@ class _PostDetailsPropioState extends State<PostDetailsPropio> {
         ],
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Carrusel de imágenes con diseño mejorado
-              if (images.isNotEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  padding: EdgeInsets.all(8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Stack(
-                      children: [
-                        SizedBox(
-                          height: 300,
-                          child: PageView.builder(
-                            controller: _pageController,
-                            onPageChanged: (index) {
-                              setState(() {
-                                currentIndex = index;
-                              });
-                            },
-                            itemCount: images.length,
-                            itemBuilder: (context, index) {
-                              return CachedNetworkImage(
-                                imageUrl: images[index],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                                errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.red),
-                              );
-                            },
-                          ),
-
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (images.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      height: 260,
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) => setState(() => currentIndex = index),
+                        itemCount: images.length,
+                        itemBuilder: (context, index) => CachedNetworkImage(
+                          imageUrl: images[index],
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                          errorWidget: (context, url, error) => Icon(Icons.error),
                         ),
-                        Positioned(
-                          left: 10,
-                          top: 130,
-                          child: IconButton(
-                            icon: Icon(Icons.arrow_back, size: 30, color: Colors.black),
-                            onPressed: currentIndex > 0 ? _previousImage : null,
-                          ),
-                        ),
-                        Positioned(
-                          right: 10,
-                          top: 130,
-                          child: IconButton(
-                            icon: Icon(Icons.arrow_forward, size: 30, color: Colors.black),
-                            onPressed: currentIndex < images.length - 1 ? _nextImage : null,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      left: 10,
+                      top: 110,
+                      child: IconButton(
+                        icon: Icon(Icons.arrow_back, size: 30, color: Colors.white),
+                        onPressed: currentIndex > 0 ? _previousImage : null,
+                      ),
+                    ),
+                    Positioned(
+                      right: 10,
+                      top: 110,
+                      child: IconButton(
+                        icon: Icon(Icons.arrow_forward, size: 30, color: Colors.white),
+                        onPressed: currentIndex < images.length - 1 ? _nextImage : null,
+                      ),
+                    ),
+                  ],
                 ),
-              SizedBox(height: 16),
-              // Contenedor para el título
+              ),
+            SizedBox(height: 16),
+
+            // Información principal
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(post.titulo, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 4),
+                  Text("Artista: ${post.artista}", style: TextStyle(fontSize: 16)),
+                  SizedBox(height: 8),
+                  Text("${post.precio} €", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+
+            // Categorías
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Categorías:", style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 6),
+                  Wrap(
+                    spacing: 6,
+                    children: post.categoria.map((cat) {
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => BusquedaView(generoInicial: cat)),
+                          );
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[800],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(cat, style: TextStyle(color: Colors.white, fontSize: 13)),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+
+            // Descripción
+            if (post.descripcion != null && post.descripcion!.isNotEmpty)
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 4),
-                  ],
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  post.titulo,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(post.descripcion!, style: TextStyle(fontSize: 15)),
               ),
-              SizedBox(height: 16),
-              // Contenedor para la descripción
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 4),
-                  ],
-                ),
-                child: Text(
-                  post.descripcion ?? "Sin descripción",
-                  style: TextStyle(fontSize: 16),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              SizedBox(height: 16),
-              // Contenedor del precio
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green[50],
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 4),
-                  ],
-                ),
-                child: Text(
-                  "${post.precio} €",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green[700]),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              SizedBox(height: 24),
-              // Botón con más espacio y mejor diseño
-              ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.edit),
-                label: Text("Editar"),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  textStyle: TextStyle(fontSize: 16),
-                ),
-              ),
-            ],
-          ),
+
+            SizedBox(height: 24),
+          ],
         ),
       ),
     );
   }
+
 
 }

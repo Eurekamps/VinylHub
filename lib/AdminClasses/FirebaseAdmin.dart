@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../FbObjects/FbPerfil.dart';
 import '../Singletone/DataHolder.dart';
@@ -197,6 +198,24 @@ class FirebaseAdmin {
     } catch (e) {
       print("Error al subir la imagen: $e");
       throw e;
+    }
+  }
+
+  Future<String?> subirImagenAFirebase(XFile imagen) async {
+    try {
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      final storageReference = FirebaseStorage.instance.ref().child('imagenes/$fileName');
+
+      // Subir archivo XFile a Firebase Storage
+      final uploadTask = storageReference.putFile(File(imagen.path));
+      final snapshot = await uploadTask.whenComplete(() => null);
+
+      // Obtener la URL de la imagen subida
+      final url = await snapshot.ref.getDownloadURL();
+      return url;
+    } catch (e) {
+      print("Error al subir la imagen a Firebase: $e");
+      return null;
     }
   }
 

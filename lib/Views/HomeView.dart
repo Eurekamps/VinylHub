@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:vinylhub/AdminClasses/FirebaseAdmin.dart';
 import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:vinylhub/Views/FavoritosView.dart';
 import 'package:vinylhub/Views/TuPerfil.dart';
@@ -91,7 +92,7 @@ class _HomeViewState extends State<HomeView> {
   Future<void> _seleccionarImagenDesdeGaleria() async {
     final XFile? imagen = await _picker.pickImage(source: ImageSource.gallery);
     if (imagen != null) {
-      final url = await _subirImagenAFirebase(imagen);  // Esto sigue funcionando
+      final url = await FirebaseAdmin().subirImagenAFirebase(imagen);  // Esto sigue funcionando
       if (url != null) {
         setState(() {
           _imagenURLs.add(url); // Guarda la URL obtenida, no el XFile
@@ -103,7 +104,7 @@ class _HomeViewState extends State<HomeView> {
   Future<void> _capturarImagenDesdeCamara() async {
     final XFile? imagen = await _picker.pickImage(source: ImageSource.camera);
     if (imagen != null) {
-      final url = await _subirImagenAFirebase(imagen);  // Esto sigue funcionando
+      final url = await FirebaseAdmin().subirImagenAFirebase(imagen);;  // Esto sigue funcionando
       if (url != null) {
         setState(() {
           _imagenURLs.add(url); // Guarda la URL obtenida, no el XFile
@@ -112,23 +113,7 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
-  Future<String?> _subirImagenAFirebase(XFile imagen) async {
-    try {
-      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      final storageReference = FirebaseStorage.instance.ref().child('imagenes/$fileName');
 
-      // Subir archivo XFile a Firebase Storage
-      final uploadTask = storageReference.putFile(File(imagen.path));
-      final snapshot = await uploadTask.whenComplete(() => null);
-
-      // Obtener la URL de la imagen subida
-      final url = await snapshot.ref.getDownloadURL();
-      return url;
-    } catch (e) {
-      print("Error al subir la imagen a Firebase: $e");
-      return null;
-    }
-  }
 
   Future<void> _agregarPost() async {
     String titulo = _tituloController.text.trim();
@@ -453,36 +438,30 @@ class _HomeViewState extends State<HomeView> {
               controller: _tituloController,
               decoration: InputDecoration(
                 labelText: 'Título del disco',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 prefixIcon: Icon(Icons.album),
               ),
               onChanged: (text) {
-                _searchVinyls(text); // Búsqueda de vinilos
+                _searchVinyls(text);
                 setState(() {
-                  // Limpiar las categorías cuando se cambie el título
                   _categoriasSeleccionadas.clear();
                 });
               },
             ),
-
             const SizedBox(height: 10),
 
-            // Campo del artista con autocompletar
+            // Campo del artista
             TextField(
               controller: _artistaController,
               decoration: InputDecoration(
                 labelText: 'Artista',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 prefixIcon: Icon(Icons.person),
               ),
             ),
             const SizedBox(height: 10),
 
-            // Mostrar sugerencias de vinilos
+            // Sugerencias
             if (_results.isNotEmpty)
               Container(
                 constraints: BoxConstraints(maxHeight: 200),
@@ -495,18 +474,14 @@ class _HomeViewState extends State<HomeView> {
                       subtitle: Text('Año: ${item['year'] ?? 'Año desconocido'}'),
                       onTap: () {
                         setState(() {
-                          // Autocompletar los campos con los valores de la sugerencia
                           _tituloController.text = item['title'] ?? '';
-                          _artistaController.text = _separarArtista(item['title'] ?? ''); //unica forma de extraer el artista del titulo
+                          _artistaController.text = _separarArtista(item['title'] ?? '');
                           _anioEdicionController.text = item['year'] ?? '';
-
-                          // Autocompletar categoría con el género si existe
                           final genre = item['genre']?.isNotEmpty == true ? item['genre'][0] : null;
                           if (genre != null && !_categoriasSeleccionadas.contains(genre)) {
                             _categoriasSeleccionadas.add(genre);
                           }
-
-                          _results.clear(); // Limpiar las sugerencias al seleccionar
+                          _results.clear();
                         });
                       },
                     );
@@ -515,48 +490,42 @@ class _HomeViewState extends State<HomeView> {
               ),
             const SizedBox(height: 10),
 
-            // Campo de año de edición
+            // Año
             TextField(
               controller: _anioEdicionController,
               decoration: InputDecoration(
                 labelText: 'Año de edición',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 prefixIcon: Icon(Icons.date_range),
               ),
             ),
             const SizedBox(height: 10),
 
-            // Campo de descripción
+            // Descripción
             TextField(
               controller: _descripcionController,
               maxLines: 3,
               decoration: InputDecoration(
                 labelText: 'Descripción',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 prefixIcon: Icon(Icons.description),
               ),
             ),
             const SizedBox(height: 10),
 
-            // Campo de precio
+            // Precio
             TextField(
               controller: _precioController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: 'Precio',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 prefixIcon: Icon(Icons.euro),
               ),
             ),
             const SizedBox(height: 10),
 
-            // Selección de categorías
+            // Categoría
             DropdownButtonFormField<String>(
               items: [
                 'Rock', 'Pop', 'R&B', 'Hip-Hop', 'Soul', 'Clásica',
@@ -577,15 +546,13 @@ class _HomeViewState extends State<HomeView> {
               },
               decoration: InputDecoration(
                 labelText: 'Categoría',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 prefixIcon: Icon(Icons.category),
               ),
             ),
             const SizedBox(height: 10),
 
-            // Mostrar categorías seleccionadas
+            // Chips de categorías seleccionadas
             Wrap(
               spacing: 8.0,
               children: _categoriasSeleccionadas.map((categoria) {
@@ -601,7 +568,7 @@ class _HomeViewState extends State<HomeView> {
             ),
             const SizedBox(height: 10),
 
-            // Botones para galería y cámara
+            // Botones de imagen
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -619,22 +586,48 @@ class _HomeViewState extends State<HomeView> {
             ),
             const SizedBox(height: 10),
 
-            // Imágenes seleccionadas
+            // Imágenes seleccionadas estilo moderno
             if (_imagenURLs.isNotEmpty)
-              Wrap(
-                spacing: 8.0,
-                children: _imagenURLs.map((image) {
-                  return Chip(
-                    label: Text('Imagen cargada'),
-                    onDeleted: () {
-                      _eliminarImagen(_imagenURLs.indexOf(image));
-                    },
-                  );
-                }).toList(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Imágenes seleccionadas:",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 120,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _imagenURLs.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        final url = _imagenURLs[index];
+                        return Stack(
+                          alignment: Alignment.topRight,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                url,
+                                height: 120,
+                                width: 120,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.close, color: Colors.red),
+                              onPressed: () => _eliminarImagen(index),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
-            // Botón para crear el post
+            // Botón de creación
             Center(
               child: ElevatedButton(
                 onPressed: _agregarPost,
@@ -646,6 +639,7 @@ class _HomeViewState extends State<HomeView> {
       ),
     );
   }
+
 
 //funcion para extraer el nombre del artista del titulo del disco
   String _separarArtista(String title) {
