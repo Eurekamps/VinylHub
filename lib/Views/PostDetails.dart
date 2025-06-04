@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:vinylhub/Singletone/AppNavegacionUtiles.dart';
@@ -35,6 +37,9 @@ class _PostDetailsState extends State<PostDetails> {
   final RecommendationService _recommendationService = RecommendationService();
   List<FbPost> postRecomendaciones = [];
   bool _loadingRecommendations = true;
+  String? _ubicacionTexto;
+
+
 
 
   Future<void> _loadRecommendations() async {
@@ -211,10 +216,33 @@ class _PostDetailsState extends State<PostDetails> {
 
 
 
+  Future<void> obtenerUbicacion() async {
+    final perfil = perfilAutor;
+    if (perfil?.latitud != null && perfil?.longitud != null) {
+      try {
+        List<Placemark> placemarks = await placemarkFromCoordinates(
+          perfil!.latitud!,
+          perfil.longitud!,
+        );
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          setState(() {
+            _ubicacionTexto = "${p.locality ?? ''}, ${p.postalCode ?? ''}".trim();
+          });
+        }
+      } catch (e) {
+        print("Error obteniendo dirección: $e");
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     var post = DataHolder().fbPostSelected!;
     var images = post.imagenURLpost;
+
+    double? lat = perfilAutor?.latitud;
+    double? lng = perfilAutor?.longitud;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -284,7 +312,7 @@ class _PostDetailsState extends State<PostDetails> {
               ),
             SizedBox(height: 16),
 
-            // Sección de información del post
+            // Información del post
             Container(
               padding: EdgeInsets.all(12),
               color: Colors.white,
@@ -346,7 +374,6 @@ class _PostDetailsState extends State<PostDetails> {
                   style: TextStyle(fontSize: 15),
                 ),
               ),
-
             SizedBox(height: 20),
 
             // Botones de acción
@@ -375,8 +402,52 @@ class _PostDetailsState extends State<PostDetails> {
                 ),
               ],
             ),
-
             SizedBox(height: 24),
+
+            // Mapa y dirección
+            if (lat != null && lng != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  height: 200,
+                  color: Colors.grey[300],
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(lat, lng),
+                      zoom: 14,
+                    ),
+                    circles: {
+                      Circle(
+                        circleId: CircleId('radio_privacidad'),
+                        center: LatLng(lat, lng),
+                        radius: 500, // 500 metros de radio, ajusta según necesidad
+                        fillColor: Colors.blue.withOpacity(0.2),
+                        strokeColor: Colors.blue.withOpacity(0.5),
+                        strokeWidth: 2,
+                      ),
+                    },
+                    zoomControlsEnabled: false,
+                    myLocationButtonEnabled: false,
+                    liteModeEnabled: true,
+                  ),
+                ),
+              ),
+              if (_ubicacionTexto != null) ...[
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.red),
+                    SizedBox(width: 6),
+                    Text(
+                      _ubicacionTexto!,
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ],
+              SizedBox(height: 24),
+            ],
+
 
             // Recomendaciones
             if (postRecomendaciones.isNotEmpty) ...[
@@ -387,62 +458,56 @@ class _PostDetailsState extends State<PostDetails> {
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: postRecomendaciones.length,
-                    itemBuilder: (context, index) {
-                      final recPost = postRecomendaciones[index];
+                  itemBuilder: (context, index) {
+                    final recPost = postRecomendaciones[index];
 
-                      // Excluir posts del propio usuario
-                      if (recPost.sAutorUid == DataHolder().miPerfil?.uid) {
-                        return const SizedBox.shrink(); // No renderiza nada
-                      }
-
-                      return GestureDetector(
-                        onTap: () => AppNavigationUtils.onPostClicked(context, recPost),
-                        child: Container(
-                          width: 160,
-                          margin: const EdgeInsets.only(right: 12),
-                          color: Colors.white,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              CachedNetworkImage(
-                                imageUrl: recPost.imagenURLpost.first,
-                                height: 120,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      recPost.titulo,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      "${recPost.precio} €",
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      );
+                    if (recPost.sAutorUid == DataHolder().miPerfil?.uid) {
+                      return const SizedBox.shrink();
                     }
 
-
+                    return GestureDetector(
+                      onTap: () => AppNavigationUtils.onPostClicked(context, recPost),
+                      child: Container(
+                        width: 160,
+                        margin: const EdgeInsets.only(right: 12),
+                        color: Colors.white,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CachedNetworkImage(
+                              imageUrl: recPost.imagenURLpost.first,
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    recPost.titulo,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    "${recPost.precio} €",
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-            ]
+            ],
           ],
         ),
       ),
     );
   }
-
-
-
 }

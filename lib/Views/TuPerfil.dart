@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart'; // ✅ NUEVA IMPORTACIÓN
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../FbObjects/FbPost.dart';
 import '../Singletone/DataHolder.dart';
@@ -28,6 +29,51 @@ class _TuPerfilState extends State<TuPerfil> {
       // Notifica que debe reconstruirse
     });
   }
+
+  Widget _buildMapaUbicacionPerfil() {
+    final perfil = DataHolder().miPerfil;
+
+    if (perfil == null || perfil.latitud == null || perfil.longitud == null) {
+      return SizedBox(); // No mostrar nada si no hay coordenadas
+    }
+
+    final LatLng centro = LatLng(perfil.latitud!, perfil.longitud!);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          height: 150,
+          decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300)),
+          child: GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: centro,
+              zoom: 13.0, // Vista de barrio/zona
+            ),
+            myLocationEnabled: false,
+            zoomControlsEnabled: false,
+            scrollGesturesEnabled: false,
+            tiltGesturesEnabled: false,
+            rotateGesturesEnabled: false,
+            mapType: MapType.normal,
+            circles: {
+              Circle(
+                circleId: CircleId('area'),
+                center: centro,
+                radius: 500, // 500 metros alrededor
+                fillColor: Colors.red.withOpacity(0.2),
+                strokeColor: Colors.redAccent,
+                strokeWidth: 1,
+              )
+            },
+            markers: {}, // Nada de punteros
+          ),
+        ),
+      ),
+    );
+  }
+
 
   void onMasDatosPostPropio(BuildContext context, FbPost postSeleccionado) {
     DataHolder().fbPostSelected = postSeleccionado;
@@ -208,6 +254,7 @@ class _TuPerfilState extends State<TuPerfil> {
       body: Column(
         children: [
           _buildPerfilDatos(),
+          _buildMapaUbicacionPerfil(), // ⬅️ Aquí va el mapa
           Expanded(
             child: _buildPostPropiosScreen(),
           ),
@@ -215,4 +262,5 @@ class _TuPerfilState extends State<TuPerfil> {
       ),
     );
   }
+
 }

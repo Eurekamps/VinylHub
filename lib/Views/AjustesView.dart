@@ -164,24 +164,64 @@ class _AjustesViewState extends State<AjustesView> {
       final settings = await FirebaseMessaging.instance.requestPermission();
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         setState(() => notificacionesActivadas = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Permiso de notificaciones concedido.")),
+        );
       } else {
         setState(() => notificacionesActivadas = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Permiso de notificaciones denegado.")),
+        );
       }
     } else {
       setState(() => notificacionesActivadas = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Notificaciones desactivadas.")),
+      );
     }
   }
 
   Future<void> alternarLocalizacion(bool valor) async {
     if (valor) {
       final permiso = await Geolocator.requestPermission();
-      setState(() {
-        localizacionActivada = permiso == LocationPermission.always || permiso == LocationPermission.whileInUse;
-      });
+      final permisoConcedido = permiso == LocationPermission.always || permiso == LocationPermission.whileInUse;
+
+      if (permisoConcedido) {
+        try {
+          final posicion = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+
+          // Guardar latitud y longitud en Firestore (colección perfiles)
+          if (user != null) {
+            await firestore.collection('perfiles').doc(user!.uid).set({
+              'latitud': posicion.latitude,
+              'longitud': posicion.longitude,
+            }, SetOptions(merge: true));
+          }
+
+          setState(() => localizacionActivada = true);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Permiso de ubicación concedido y guardado en tu perfil.")),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error al obtener la ubicación: $e")),
+          );
+          setState(() => localizacionActivada = false);
+        }
+      } else {
+        setState(() => localizacionActivada = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Permiso de ubicación denegado.")),
+        );
+      }
     } else {
       setState(() => localizacionActivada = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Ubicación desactivada.")),
+      );
     }
   }
+
 
   void mostrarInfoApp() {
     showAboutDialog(

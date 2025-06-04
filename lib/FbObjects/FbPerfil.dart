@@ -6,6 +6,8 @@ class FbPerfil {
   String imagenURL;
   String nombre;
   String uid;
+  double? latitud;
+  double? longitud;
 
   FbPerfil({
     required this.nombre,
@@ -13,26 +15,28 @@ class FbPerfil {
     required this.apodo,
     required this.imagenURL,
     required this.uid,
+    this.latitud,
+    this.longitud,
   });
 
-  // Ajuste para manejar datos nulos en Firestore
   factory FbPerfil.fromFirestore(
       DocumentSnapshot<Map<String, dynamic>> snapshot,
       SnapshotOptions? options,
       ) {
     final data = snapshot.data();
 
-    // Verificación de null en caso de que no existan los datos en el snapshot
     if (data == null) {
       throw Exception('No se pudo obtener el perfil: datos nulos');
     }
 
     return FbPerfil(
-      nombre: data['nombre'] ?? '', // Valor por defecto si es nulo
-      edad: data['edad'] ?? 0,      // Valor por defecto si es nulo
-      apodo: data['apodo'] ?? '',    // Valor por defecto si es nulo
-      imagenURL: data['imagenURL'] ?? '',  // Valor por defecto si es nulo
-      uid: data['uid'] ?? '',        // Valor por defecto si es nulo
+      nombre: data['nombre'] ?? '',
+      edad: data['edad'] ?? 0,
+      apodo: data['apodo'] ?? '',
+      imagenURL: data['imagenURL'] ?? '',
+      uid: data['uid'] ?? '',
+      latitud: (data['latitud'] as num?)?.toDouble(),
+      longitud: (data['longitud'] as num?)?.toDouble(),
     );
   }
 
@@ -43,6 +47,8 @@ class FbPerfil {
       'imagenURL': imagenURL,
       'apodo': apodo,
       'uid': uid,
+      'latitud': latitud,
+      'longitud': longitud,
     };
   }
 }

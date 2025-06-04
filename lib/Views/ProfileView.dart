@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../AdminClasses/FirebaseAdmin.dart';
@@ -28,6 +29,18 @@ class _ProfileViewState extends State<ProfileView> {
   final TextEditingController _edad = TextEditingController();
   File? _avatar;
   bool blUploading = false;
+
+  double? _latitud;
+  double? _longitud;
+
+
+
+  @override
+  void initState() {
+    super.initState();
+    _obtenerUbicacion();
+  }
+
 
   Future<void> _pickAvatar(ImageSource source) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
@@ -51,6 +64,24 @@ class _ProfileViewState extends State<ProfileView> {
       return null;
     }
   }
+
+  Future<void> _obtenerUbicacion() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        print("Permiso de ubicación denegado.");
+        return;
+      }
+    }
+
+    final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+    setState(() {
+      _latitud = position.latitude;
+      _longitud = position.longitude;
+    });
+  }
+
 
   void _clickRegistro() async {
     print("Iniciando registro...");
@@ -78,7 +109,10 @@ class _ProfileViewState extends State<ProfileView> {
         apodo: _apodo.text,
         edad: int.tryParse(_edad.text) ?? 0,
         imagenURL: imagenURL,
+        latitud: _latitud,
+        longitud: _longitud,
       );
+
 
       await FirebaseAdmin().crearPerfil(perfil);
       setState(() => blUploading = false);

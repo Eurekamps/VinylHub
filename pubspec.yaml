@@ -27,7 +27,10 @@ dependencies:
   image: ^4.0.15
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
+
+  geocoding: ^2.1.0
   geolocator: ^10.0.0
+  google_maps_flutter: ^2.5.0
 
   cupertino_icons: ^1.0.8
   firebase_remote_config: ^5.2.0

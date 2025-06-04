@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../FbObjects/FbPost.dart';
 import '../FbObjects/FbPerfil.dart';
@@ -21,35 +22,48 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   FbPerfil? perfilAjeno;
 
+  LatLng? _userLocation;
+  bool _locationLoading = true;
+
   @override
   void initState() {
     super.initState();
     _cargarPerfilAjeno();
+    _obtenerUbicacion();
   }
 
   Future<void> _cargarPerfilAjeno() async {
     await DataHolder().obtenerPerfilDeFirestore(widget.uidAjeno);
-    perfilAjeno = DataHolder().miPerfil; // o .perfilAjeno si lo estás almacenando por separado
-    setState(() {}); // Refresca cuando se obtienen los datos
+    perfilAjeno = DataHolder().miPerfil; // mantienes igual
+    setState(() {});
   }
 
+  Future<void> _obtenerUbicacion() async {
+    try {
+      Position pos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      setState(() {
+        _userLocation = LatLng(pos.latitude, pos.longitude);
+        _locationLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _locationLoading = false;
+      });
+    }
+  }
 
   void onMasDatosPostAjeno(BuildContext context, FbPost postSeleccionado) {
     DataHolder().fbPostSelected = postSeleccionado;
-    Navigator.of(context).pushNamed('/postdetailsajeno'); // Asegúrate de tener esta ruta
+    Navigator.of(context).pushNamed('/postdetailsajeno');
   }
 
   Widget _buildPostAjenoScreen() {
     return StreamBuilder<QuerySnapshot>(
       stream: _firestore.collection('Posts').where('sAutorUid', isEqualTo: widget.uidAjeno).snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Center(child: CircularProgressIndicator());
-        }
+        if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
 
-        var posts = snapshot.data!.docs
-            .map((doc) => FbPost.fromFirestore(doc))
-            .toList();
+        var posts = snapshot.data!.docs.map((doc) => FbPost.fromFirestore(doc)).toList();
 
         if (posts.isEmpty) {
           return Center(
@@ -70,13 +84,10 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
           itemCount: posts.length,
           itemBuilder: (context, index) {
             FbPost post = posts[index];
-
             return GestureDetector(
               onTap: () => onMasDatosPostAjeno(context, post),
               child: Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 elevation: 4,
                 child: Padding(
                   padding: const EdgeInsets.all(4.0),
@@ -100,20 +111,13 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
                         AspectRatio(
                           aspectRatio: 1.5,
                           child: Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              size: 50,
-                              color: Colors.grey,
-                            ),
+                            child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
                           ),
                         ),
                       SizedBox(height: 8),
                       Text(
                         post.titulo,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -121,10 +125,7 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
                       SizedBox(height: 4),
                       Text(
                         'Categorías: ${post.categoria.join(', ')}',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -188,6 +189,48 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
     );
   }
 
+  Widget _buildMapa() {
+    if (_locationLoading) return Center(child: CircularProgressIndicator());
+
+    if (_userLocation == null) {
+      return Center(child: Text("No se pudo obtener la ubicación"));
+    }
+
+    return Container(
+      height: 120,  // Altura más pequeña para que ocupe menos pantalla
+      margin: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(15),
+        child: GoogleMap(
+          initialCameraPosition: CameraPosition(target: _userLocation!, zoom: 13),
+          markers: {
+            Marker(markerId: MarkerId('user'), position: _userLocation!),
+          },
+          circles: {
+            Circle(
+              circleId: CircleId('privacy_circle'),
+              center: _userLocation!,
+              radius: 2000, // 2 km
+              fillColor: Colors.blue.withOpacity(0.2),
+              strokeColor: Colors.blueAccent.withOpacity(0.7),
+              strokeWidth: 2,
+            ),
+          },
+          myLocationButtonEnabled: false,
+          zoomControlsEnabled: false,
+          onMapCreated: (controller) {},
+        ),
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -207,10 +250,12 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
       ),
       body: Column(
         children: [
+          _buildMapa(),          // Mapa pequeño arriba
           _buildPerfilAjenoDatos(),
           Expanded(child: _buildPostAjenoScreen()),
         ],
       ),
+
     );
   }
 }
