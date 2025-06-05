@@ -1,13 +1,28 @@
-import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart'; // ✅ NUEVA IMPORTACIÓN
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../FbObjects/FbPost.dart';
 import '../Singletone/DataHolder.dart';
+
+// Clase Perfil para cargar datos desde Firestore
+class Perfil {
+  final String? uid;
+  final String? nombre;
+  final String? imagenURL;
+
+  Perfil({this.uid, this.nombre, this.imagenURL});
+
+  factory Perfil.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Perfil(
+      uid: doc.id,
+      nombre: data['nombre'] ?? '',
+      imagenURL: data['imagenURL'] ?? '',
+    );
+  }
+}
 
 class TuPerfil extends StatefulWidget {
   @override
@@ -16,64 +31,63 @@ class TuPerfil extends StatefulWidget {
 
 class _TuPerfilState extends State<TuPerfil> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  List<Perfil?> perfilesSeguidos = [];
 
   @override
   void initState() {
     super.initState();
     _cargarPerfil();
+    _cargarPerfilesSeguidos();
   }
 
   Future<void> _cargarPerfil() async {
     await DataHolder().obtenerPerfilDeFirestore(FirebaseAuth.instance.currentUser!.uid);
-    setState(() {
-      // Notifica que debe reconstruirse
-    });
+    setState(() {});
+  }
+
+  Future<void> _cargarPerfilesSeguidos() async {
+    final uidActual = FirebaseAuth.instance.currentUser!.uid;
+
+    // Cambia 'siguiendo' y 'uidsSeguidos' según tu estructura real en Firestore
+    final docRef = _firestore.collection('siguiendo').doc(uidActual);
+    final docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      final List<dynamic>? listaUids = docSnap.data()?['uidsSeguidos'];
+      if (listaUids != null && listaUids.isNotEmpty) {
+        List<Perfil?> perfiles = [];
+        for (String uidSeguido in listaUids) {
+          final perfilDoc = await _firestore.collection('perfiles').doc(uidSeguido).get();
+          if (perfilDoc.exists) {
+            perfiles.add(Perfil.fromFirestore(perfilDoc));
+          }
+        }
+        setState(() {
+          perfilesSeguidos = perfiles;
+        });
+      }
+    }
   }
 
   Widget _buildMapaUbicacionPerfil() {
-    final perfil = DataHolder().miPerfil;
-
-    if (perfil == null || perfil.latitud == null || perfil.longitud == null) {
-      return SizedBox(); // No mostrar nada si no hay coordenadas
-    }
-
-    final LatLng centro = LatLng(perfil.latitud!, perfil.longitud!);
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          height: 150,
-          decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300)),
-          child: GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: centro,
-              zoom: 13.0, // Vista de barrio/zona
-            ),
-            myLocationEnabled: false,
-            zoomControlsEnabled: false,
-            scrollGesturesEnabled: false,
-            tiltGesturesEnabled: false,
-            rotateGesturesEnabled: false,
-            mapType: MapType.normal,
-            circles: {
-              Circle(
-                circleId: CircleId('area'),
-                center: centro,
-                radius: 500, // 500 metros alrededor
-                fillColor: Colors.red.withOpacity(0.2),
-                strokeColor: Colors.redAccent,
-                strokeWidth: 1,
-              )
-            },
-            markers: {}, // Nada de punteros
+      child: GestureDetector(
+        onTap: () {
+          Navigator.of(context).pushNamed('/ubicacion');
+        },
+        child: Text(
+          "Ver ubicación",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: Colors.blueAccent,
+            decoration: TextDecoration.underline,
           ),
         ),
       ),
     );
   }
-
 
   void onMasDatosPostPropio(BuildContext context, FbPost postSeleccionado) {
     DataHolder().fbPostSelected = postSeleccionado;
@@ -133,7 +147,7 @@ class _TuPerfilState extends State<TuPerfil> {
                           child: AspectRatio(
                             aspectRatio: 1.5,
                             child: CachedNetworkImage(
-                              imageUrl: post.imagenURLpost.first, // ✅ CARGA CON CACHE
+                              imageUrl: post.imagenURLpost.first,
                               fit: BoxFit.contain,
                               placeholder: (context, url) => Center(child: CircularProgressIndicator()),
                               errorWidget: (context, url, error) => Icon(Icons.error),
@@ -201,7 +215,7 @@ class _TuPerfilState extends State<TuPerfil> {
           backgroundImage: DataHolder().miPerfil != null &&
               DataHolder().miPerfil!.imagenURL != null &&
               DataHolder().miPerfil!.imagenURL!.isNotEmpty
-              ? CachedNetworkImageProvider(DataHolder().miPerfil!.imagenURL!) // ✅ OPTIMIZA TAMBIÉN EL PERFIL
+              ? CachedNetworkImageProvider(DataHolder().miPerfil!.imagenURL!)
               : AssetImage('assets/default-profile.png') as ImageProvider,
         ),
         SizedBox(height: 10),
@@ -248,13 +262,58 @@ class _TuPerfilState extends State<TuPerfil> {
     );
   }
 
+  Widget _buildPerfilesSeguidos() {
+    if (perfilesSeguidos.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Text(
+          'No sigues a ningún usuario aún.',
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 120,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: perfilesSeguidos.length,
+        itemBuilder: (context, index) {
+          final perfil = perfilesSeguidos[index];
+          if (perfil == null) return SizedBox();
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 35,
+                  backgroundImage: perfil.imagenURL != null && perfil.imagenURL!.isNotEmpty
+                      ? CachedNetworkImageProvider(perfil.imagenURL!)
+                      : AssetImage('assets/default-profile.png') as ImageProvider,
+                ),
+                SizedBox(height: 6),
+                Text(
+                  perfil.nombre ?? 'Usuario',
+                  style: TextStyle(fontSize: 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
           _buildPerfilDatos(),
-          _buildMapaUbicacionPerfil(), // ⬅️ Aquí va el mapa
+          _buildPerfilesSeguidos(),
+          _buildMapaUbicacionPerfil(),
           Expanded(
             child: _buildPostPropiosScreen(),
           ),
@@ -262,5 +321,4 @@ class _TuPerfilState extends State<TuPerfil> {
       ),
     );
   }
-
 }

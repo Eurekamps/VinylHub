@@ -10,6 +10,7 @@ import 'package:vinylhub/Views/PerfilAjenoView.dart';
 import 'package:vinylhub/Views/PostDetails.dart';
 import 'package:vinylhub/Views/PostDetailsPropio.dart';
 import 'package:vinylhub/Views/TuPerfil.dart';
+import 'package:vinylhub/Views/UbicacionView.dart';
 import '../Singletone/ThemeProvider.dart';
 
 
@@ -44,7 +45,8 @@ class MyApp extends StatelessWidget{
       '/postdetailspropio': (context) => PostDetailsPropio(onClose: (){}),
       '/postdetailsajeno': (context) => PostDetails(onClose: () {  },),
       '/ajustesview': (context) => const AjustesView(),
-      '/busquedaimagen': (context) => BusquedaImagen()
+      '/busquedaimagen': (context) => BusquedaImagen(),
+      '/ubicacion': (context) => UbicacionView()
 
 
     };
