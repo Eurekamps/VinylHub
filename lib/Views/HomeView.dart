@@ -45,6 +45,11 @@ class _HomeViewState extends State<HomeView> {
   bool _isGridView = true;
   List<FbChat> arChats = [];
   bool blListaPostsVisible = true;
+  String? _categoriaSeleccionada;
+  String? _ordenSeleccionado;
+  RangeValues _rangoPrecio = RangeValues(0, 500);
+
+
 
   @override
   void initState() {
@@ -229,6 +234,107 @@ class _HomeViewState extends State<HomeView> {
     });
   }
 
+  Widget _buildFiltros() {
+    final categorias = ['Rock', 'Pop', 'R&B', 'Hip-Hop', 'Soul', 'Clásica',
+      'Heavy Metal', 'Jazz', 'Neo Soul', 'Blues', 'Folk',
+      'Reggae', 'Country', 'Electrónica', 'Punk', 'Funk',
+      'Disco', 'Indie', 'Latino', 'Gospel', 'Experimental',
+      'House', 'Techno', 'Ambient', 'Trance', 'Ska'];
+    final ordenes = ['Título A-Z', 'Título Z-A', 'Precio ascendente', 'Precio descendente'];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      child: Column(
+        children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[700],
+                padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 0),
+                textStyle: TextStyle(fontSize: 13),
+              ),
+              icon: Icon(Icons.refresh, size: 16),
+              label: Text("Resetear filtros"),
+              onPressed: () {
+                setState(() {
+                  _categoriaSeleccionada = null;
+                  _ordenSeleccionado = null;
+                  _rangoPrecio = RangeValues(0, 500);
+                });
+              },
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  hint: Text("Categoría"),
+                  value: _categoriaSeleccionada,
+                  items: categorias.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _categoriaSeleccionada = value;
+                    });
+                  },
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: DropdownButton<String>(
+                  isExpanded: true,
+                  hint: Text("Ordenar por"),
+                  value: _ordenSeleccionado,
+                  items: ordenes.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _ordenSeleccionado = value;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Text("Precio: ${_rangoPrecio.start.round()}€ - ${_rangoPrecio.end.round()}€"),
+              Expanded(
+                child: RangeSlider(
+                  values: _rangoPrecio,
+                  min: 0,
+                  max: 1000,
+                  divisions: 20,
+                  labels: RangeLabels(
+                    _rangoPrecio.start.round().toString(),
+                    _rangoPrecio.end.round().toString(),
+                  ),
+                  onChanged: (values) {
+                    setState(() {
+                      _rangoPrecio = values;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
 
   Widget _buildListScreen() {
     return StreamBuilder<QuerySnapshot>(
@@ -244,7 +350,26 @@ class _HomeViewState extends State<HomeView> {
         var posts = snapshot.data!.docs
             .map((doc) => FbPost.fromFirestore(doc))
             .where((post) => post.sAutorUid != currentUserUid)
+            .where((post) {
+          final dentroCategoria = _categoriaSeleccionada == null || post.categoria.contains(_categoriaSeleccionada!);
+          final dentroPrecio = post.precio >= _rangoPrecio.start && post.precio <= _rangoPrecio.end;
+          return dentroCategoria && dentroPrecio;
+        })
             .toList();
+
+// Ordenar
+        if (_ordenSeleccionado == 'Título A-Z') {
+          posts.sort((a, b) => a.titulo.compareTo(b.titulo));
+        } else if (_ordenSeleccionado == 'Título Z-A') {
+          posts.sort((a, b) => b.titulo.compareTo(a.titulo));
+        } else if (_ordenSeleccionado == 'Precio ascendente') {
+          posts.sort((a, b) => a.precio.compareTo(b.precio));
+        } else if (_ordenSeleccionado == 'Precio descendente') {
+          posts.sort((a, b) => b.precio.compareTo(a.precio));
+        }
+
+
+
 
         return ListView.builder(
           itemCount: posts.length,
@@ -331,7 +456,24 @@ class _HomeViewState extends State<HomeView> {
         var posts = snapshot.data!.docs
             .map((doc) => FbPost.fromFirestore(doc))
             .where((post) => post.sAutorUid != currentUserUid)
+            .where((post) {
+          final dentroCategoria = _categoriaSeleccionada == null || post.categoria.contains(_categoriaSeleccionada!);
+          final dentroPrecio = post.precio >= _rangoPrecio.start && post.precio <= _rangoPrecio.end;
+          return dentroCategoria && dentroPrecio;
+        })
             .toList();
+
+// Ordenar
+        if (_ordenSeleccionado == 'Título A-Z') {
+          posts.sort((a, b) => a.titulo.compareTo(b.titulo));
+        } else if (_ordenSeleccionado == 'Título Z-A') {
+          posts.sort((a, b) => b.titulo.compareTo(a.titulo));
+        } else if (_ordenSeleccionado == 'Precio ascendente') {
+          posts.sort((a, b) => a.precio.compareTo(b.precio));
+        } else if (_ordenSeleccionado == 'Precio descendente') {
+          posts.sort((a, b) => b.precio.compareTo(a.precio));
+        }
+
 
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -881,7 +1023,12 @@ class _HomeViewState extends State<HomeView> {
       ),
       drawer: MiDrawer1(),
       body: _selectedIndex == 0
-          ? (_isGridView ? _buildGridScreen() : _buildListScreen())
+          ? Column(
+        children: [
+          _buildFiltros(),
+          Expanded(child: _isGridView ? _buildGridScreen() : _buildListScreen()),
+        ],
+      )
           : _selectedIndex == 1
           ? FavoritosView()
           : _selectedIndex == 2
@@ -889,6 +1036,7 @@ class _HomeViewState extends State<HomeView> {
           : _selectedIndex == 3
           ? _buildPantallaChats()
           : TuPerfil(),
+
       bottomNavigationBar:  BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
