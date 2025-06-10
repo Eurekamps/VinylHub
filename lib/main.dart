@@ -1,10 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:vinylhub/Apps/MyApp.dart';
 
 
 import 'Singletone/ThemeProvider.dart';
+import 'Views/StripeKeys.dart';
 import 'firebase_options.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
@@ -14,8 +16,9 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  Stripe.publishableKey = 'pk_test_51QtaNxRsjT749tBH3gsuQVG0pN6LysEWyap7fSGgj1yjsIhTcgdi026abxogiK7HXjCNFiYVxQIaff0cokBk2rtc00AD9eEVlI'; // tu clave pública
+  Stripe.publishableKey = StripeKeys.publishableKey;
   await Stripe.instance.applySettings();
+
 
   runApp(
     ChangeNotifierProvider(

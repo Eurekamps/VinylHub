@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
@@ -18,6 +22,7 @@ import '../Services/RecomendationService.dart';
 import '../Singletone/DataHolder.dart';
 import 'BusquedaView.dart';
 import 'ChatView.dart';
+import 'StripeKeys.dart';
 
 class PostDetails extends StatefulWidget {
   final Function() onClose;
@@ -42,8 +47,35 @@ class _PostDetailsState extends State<PostDetails> {
   String? _ubicacionTexto;
 
   final functions = FirebaseFunctions.instance;
+  final stripeSecretKey = StripeKeys.secretKey;
 
-  Future<String?> createPaymentIntent(int amountInCents) async {
+  Map<String, dynamic>? paymentIntent;
+
+  String calculateAmount(String amount) {
+    final calculatedAmount = (int.parse(amount)) * 100;
+    return calculatedAmount.toString();
+  }
+
+  Future<Map<String, dynamic>> createPaymentIntent(String amount, String currency) async {
+    try {
+      String body = 'amount=${calculateAmount(amount)}&currency=$currency';
+
+      var response = await http.post(
+        Uri.parse('https://api.stripe.com/v1/payment_intents'),
+        headers: {
+          'Authorization': 'Bearer $stripeSecretKey',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body,
+      );
+
+      return json.decode(response.body);
+    } catch (err) {
+      throw Exception(err.toString());
+    }
+  }
+
+  /*Future<String?> createPaymentIntent(int amountInCents) async {
     print('Valor de amount que se enviará: $amountInCents (int)');
     try {
       final response = await functions
@@ -55,42 +87,55 @@ class _PostDetailsState extends State<PostDetails> {
       print('Error al crear PaymentIntent: $e');
       return null;
     }
-  }
+  }*/
 
   void pagar(int amountEuros) async {
-    final amountInCents = amountEuros * 100;
-    print('post.precio enviado en céntimos: $amountInCents');
+  try {
+    final amountStr = amountEuros.toString();
 
-    final clientSecret = await createPaymentIntent(amountInCents);
+    // 1. Crear PaymentIntent desde Stripe directamente
+    paymentIntent = await createPaymentIntent(amountStr, 'eur');
 
-    if (clientSecret == null) {
+    if (paymentIntent == null || paymentIntent!['client_secret'] == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Error al iniciar el pago.")),
+        const SnackBar(content: Text("Error al crear el PaymentIntent.")),
       );
       return;
     }
 
-    try {
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          paymentIntentClientSecret: clientSecret,
-          merchantDisplayName: 'VinylHub',
-          // Opcional: agregar otros parámetros como estilo o applePay/GooglePay
-        ),
-      );
+    // 2. Inicializar hoja de pago
+    await Stripe.instance.initPaymentSheet(
+      paymentSheetParameters: SetupPaymentSheetParameters(
+        paymentIntentClientSecret: paymentIntent!['client_secret'],
+        merchantDisplayName: 'VinylHub',
+        style: ThemeMode.light,
+      ),
+    );
 
-      await Stripe.instance.presentPaymentSheet();
+    // 3. Mostrar la hoja de pago
+    await Stripe.instance.presentPaymentSheet();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Pago completado con éxito.")),
-      );
-    } catch (e) {
-      print('Error al presentar hoja de pago: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Error en el pago.")),
-      );
-    }
+    // 4. Mostrar confirmación
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("✅ Pago completado con éxito.")),
+    );
+
+    // 5. Limpieza opcional
+    paymentIntent = null;
+
+  } on StripeException catch (e) {
+    print("Stripe error: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("❌ Pago cancelado.")),
+    );
+  } catch (e) {
+    print("Error general: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("❌ Error en el proceso de pago.")),
+    );
   }
+}
+
 
 
 
