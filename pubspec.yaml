@@ -17,6 +17,7 @@ dependencies:
   cloud_firestore: ^5.5.0
   firebase_storage: ^12.1.0
   firebase_messaging: ^15.1.6
+  cloud_functions: ^5.2.0
 
 
   google_fonts: ^6.2.1
@@ -32,12 +33,15 @@ dependencies:
   geolocator: ^10.0.0
   google_maps_flutter: ^2.5.0
 
+
   cupertino_icons: ^1.0.8
   firebase_remote_config: ^5.2.0
   share_plus: ^10.1.4
   flutter_launcher_icons: ^0.14.3
   google_sign_in: ^6.2.2
   provider: ^6.0.0
+
+  flutter_stripe: ^10.0.0
 
 flutter_icons:
   android: true

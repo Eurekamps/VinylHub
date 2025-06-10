@@ -6,12 +6,16 @@ import 'package:vinylhub/Apps/MyApp.dart';
 
 import 'Singletone/ThemeProvider.dart';
 import 'firebase_options.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  Stripe.publishableKey = 'pk_test_51QtaNxRsjT749tBH3gsuQVG0pN6LysEWyap7fSGgj1yjsIhTcgdi026abxogiK7HXjCNFiYVxQIaff0cokBk2rtc00AD9eEVlI'; // tu clave pública
+  await Stripe.instance.applySettings();
 
   runApp(
     ChangeNotifierProvider(

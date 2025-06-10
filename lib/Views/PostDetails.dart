@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:vinylhub/FbObjects/FbChat.dart';
@@ -38,6 +40,57 @@ class _PostDetailsState extends State<PostDetails> {
   List<FbPost> postRecomendaciones = [];
   bool _loadingRecommendations = true;
   String? _ubicacionTexto;
+
+  final functions = FirebaseFunctions.instance;
+
+  Future<String?> createPaymentIntent(int amountInCents) async {
+    print('Valor de amount que se enviará: $amountInCents (int)');
+    try {
+      final response = await functions
+          .httpsCallable('createPaymentIntent')
+          .call({'amount': amountInCents});
+      print('Respuesta recibida: ${response.data}');
+      return response.data['clientSecret'] as String?;
+    } catch (e) {
+      print('Error al crear PaymentIntent: $e');
+      return null;
+    }
+  }
+
+  void pagar(int amountEuros) async {
+    final amountInCents = amountEuros * 100;
+    print('post.precio enviado en céntimos: $amountInCents');
+
+    final clientSecret = await createPaymentIntent(amountInCents);
+
+    if (clientSecret == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error al iniciar el pago.")),
+      );
+      return;
+    }
+
+    try {
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: 'VinylHub',
+          // Opcional: agregar otros parámetros como estilo o applePay/GooglePay
+        ),
+      );
+
+      await Stripe.instance.presentPaymentSheet();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Pago completado con éxito.")),
+      );
+    } catch (e) {
+      print('Error al presentar hoja de pago: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error en el pago.")),
+      );
+    }
+  }
 
 
 
@@ -235,6 +288,8 @@ class _PostDetailsState extends State<PostDetails> {
       }
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -505,6 +560,25 @@ class _PostDetailsState extends State<PostDetails> {
                 ),
               ),
             ],
+            // Botón de comprar
+            SizedBox(height: 24),
+            Container(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: Icon(Icons.payment),
+                label: Text("Comprar por ${post.precio} €"),
+                onPressed: () => pagar(post.precio),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  side: BorderSide(color: Colors.black),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  textStyle: TextStyle(fontSize: 16),
+                ),
+              ),
+            ),
+            SizedBox(height: 30),
+
           ],
         ),
       ),
