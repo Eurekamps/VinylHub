@@ -139,13 +139,17 @@ class _PostDetailsState extends State<PostDetails> {
         'pedidosVendidos': FieldValue.arrayUnion([pedidoId])
       });
 
+      // Después de crear el pedido y actualizar los pedidos del perfil y estado:
       await FirebaseFirestore.instance.collection('Posts').doc(post.uid).update({
-        'estado': 'vendido'
+        'estado': 'vendido',
+        'compradorUid': currentUser?.uid
       });
 
       setState(() {
         post.estado = 'vendido';
+        post.compradorUid = currentUser?.uid;  // si tienes este campo en tu modelo FbPost
       });
+
 
       paymentIntent = null;
 
@@ -470,21 +474,54 @@ class _PostDetailsState extends State<PostDetails> {
             if (images.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
-                child: SizedBox(
-                  height: 260,
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (index) => setState(() => currentIndex = index),
-                    itemCount: images.length,
-                    itemBuilder: (context, index) => CachedNetworkImage(
-                      imageUrl: images[index],
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                      errorWidget: (context, url, error) => Icon(Icons.error),
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      height: 260,
+                      child: PageView.builder(
+                        controller: _pageController,
+                        onPageChanged: (index) => setState(() => currentIndex = index),
+                        itemCount: images.length,
+                        itemBuilder: (context, index) => CachedNetworkImage(
+                          imageUrl: images[index],
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Center(child: CircularProgressIndicator()),
+                          errorWidget: (context, url, error) => Icon(Icons.error),
+                        ),
+                      ),
                     ),
-                  ),
+
+                    // Cinta "VENDIDO"
+                    if (post.estado.toLowerCase() == "vendido")
+                      Positioned.fill(
+                        child: Container(
+                          alignment: Alignment.center,
+                          color: Colors.black.withOpacity(0.4),
+                          child: Transform.rotate(
+                            angle: -0.2,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                "VENDIDO",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
+
             SizedBox(height: 16),
 
             // Información del post

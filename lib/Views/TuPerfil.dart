@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../FbObjects/FbPost.dart';
+import '../Singletone/AppNavigationUtils.dart';
 import '../Singletone/DataHolder.dart';
 
 // Clase Perfil para cargar datos desde Firestore
@@ -203,6 +204,131 @@ class _TuPerfilState extends State<TuPerfil> {
     );
   }
 
+  Widget _buildPostCompradosScreen() {
+    final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+
+    if (currentUserUid == null) {
+      return Center(
+        child: Text("No has iniciado sesión."),
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestore
+          .collection('Posts')
+          .where('estado', isEqualTo: 'vendido')
+          .where('compradorUid', isEqualTo: currentUserUid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
+
+        var posts = snapshot.data!.docs
+            .map((doc) => FbPost.fromFirestore(doc))
+            .toList();
+
+        if (posts.isEmpty) {
+          return Center(
+            child: Text(
+              "Aún no has comprado ningún artículo.",
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          );
+        }
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(8),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 8.0,
+            mainAxisSpacing: 8.0,
+            childAspectRatio: 0.8,
+          ),
+          itemCount: posts.length,
+          itemBuilder: (context, index) {
+            final post = posts[index];
+
+            return GestureDetector(
+              onTap: () {
+                AppNavigationUtils.onPostClicked(context, post);
+              },
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (post.imagenURLpost.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: AspectRatio(
+                            aspectRatio: 1.5,
+                            child: CachedNetworkImage(
+                              imageUrl: post.imagenURLpost.first,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) =>
+                                  Center(child: CircularProgressIndicator()),
+                              errorWidget: (context, url, error) =>
+                                  Icon(Icons.error),
+                            ),
+                          ),
+                        )
+                      else
+                        AspectRatio(
+                          aspectRatio: 1.5,
+                          child: Center(
+                            child: Icon(
+                              Icons.image_not_supported,
+                              size: 50,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      SizedBox(height: 8),
+                      Text(
+                        post.titulo,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Categorías: ${post.categoria.join(', ')}',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Precio: ${post.precio} €',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+
   Widget _buildPerfilDatos() {
     final currentUser = FirebaseAuth.instance.currentUser;
 
@@ -308,17 +434,35 @@ class _TuPerfilState extends State<TuPerfil> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          _buildPerfilDatos(),
-          _buildPerfilesSeguidos(),
-          _buildMapaUbicacionPerfil(),
-          Expanded(
-            child: _buildPostPropiosScreen(),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Mi Perfil'),
+          bottom: TabBar(
+            tabs: [
+              Tab(text: 'Mis publicaciones'),
+              Tab(text: 'Mis compras'),
+            ],
           ),
-        ],
+        ),
+        body: Column(
+          children: [
+            _buildPerfilDatos(),
+            _buildPerfilesSeguidos(),
+            _buildMapaUbicacionPerfil(),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildPostPropiosScreen(),
+                  _buildPostCompradosScreen(), // NUEVO
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+
 }

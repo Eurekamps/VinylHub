@@ -84,8 +84,8 @@ class _PostDetailsPropioState extends State<PostDetailsPropio> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.edit, color: Colors.black87),
-            onPressed: () async {
+            icon: Icon(Icons.edit, color: post.estado.toLowerCase() == "vendido" ? Colors.grey : Colors.black87),
+            onPressed: post.estado.toLowerCase() == "vendido" ? null : () async {
               final updatedPost = await Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -99,8 +99,8 @@ class _PostDetailsPropioState extends State<PostDetailsPropio> {
                 });
               }
             },
-
           ),
+
           IconButton(
             icon: Icon(Icons.share, color: Colors.black),
             onPressed: () {
@@ -135,6 +135,31 @@ class _PostDetailsPropioState extends State<PostDetailsPropio> {
                         ),
                       ),
                     ),
+                    if (post.estado == 'vendido') Positioned.fill(
+                      child: Container(
+                        alignment: Alignment.center,
+                        color: Colors.black.withOpacity(0.4),
+                        child: Transform.rotate(
+                          angle: -0.2,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              "VENDIDO",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     Positioned(
                       left: 10,
                       top: 110,
@@ -153,6 +178,7 @@ class _PostDetailsPropioState extends State<PostDetailsPropio> {
                     ),
                   ],
                 ),
+
               ),
             SizedBox(height: 16),
 
