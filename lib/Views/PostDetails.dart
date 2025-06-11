@@ -13,9 +13,10 @@ import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:vinylhub/Singletone/AppNavegacionUtiles.dart';
+import 'package:vinylhub/Singletone/AppNavigationUtils.dart';
 
 import '../FbObjects/FbFavorito.dart';
+import '../FbObjects/FbPedido.dart';
 import '../FbObjects/FbPerfil.dart';
 import '../FbObjects/FbPost.dart';
 import '../Services/RecomendationService.dart';
@@ -75,68 +76,142 @@ class _PostDetailsState extends State<PostDetails> {
     }
   }
 
-  /*Future<String?> createPaymentIntent(int amountInCents) async {
-    print('Valor de amount que se enviará: $amountInCents (int)');
+  Future<void> pagar({
+    required BuildContext context,
+    required FbPost post,
+    required int amountEuros,
+    required String direccion,
+    required String ciudad,
+    required String provincia,
+    required String codigoPostal,
+  }) async {
     try {
-      final response = await functions
-          .httpsCallable('createPaymentIntent')
-          .call({'amount': amountInCents});
-      print('Respuesta recibida: ${response.data}');
-      return response.data['clientSecret'] as String?;
-    } catch (e) {
-      print('Error al crear PaymentIntent: $e');
-      return null;
-    }
-  }*/
+      final currentUser = FirebaseAuth.instance.currentUser;
+      final amountStr = amountEuros.toString();
 
-  void pagar(int amountEuros) async {
-  try {
-    final amountStr = amountEuros.toString();
+      paymentIntent = await createPaymentIntent(amountStr, 'eur');
 
-    // 1. Crear PaymentIntent desde Stripe directamente
-    paymentIntent = await createPaymentIntent(amountStr, 'eur');
+      if (paymentIntent == null || paymentIntent!['client_secret'] == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Error al crear el PaymentIntent.")),
+          );
+        }
+        return;
+      }
 
-    if (paymentIntent == null || paymentIntent!['client_secret'] == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Error al crear el PaymentIntent.")),
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: paymentIntent!['client_secret'],
+          merchantDisplayName: 'VinylHub',
+          style: ThemeMode.light,
+        ),
       );
-      return;
+
+      await Stripe.instance.presentPaymentSheet();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ Pago completado con éxito.")),
+        );
+      }
+
+      // Crear pedido SOLO después del pago
+      final pedidoRef = await FirebaseFirestore.instance.collection('pedidos').add({
+        'direccion': direccion,
+        'ciudad': ciudad,
+        'provincia': provincia,
+        'codigoPostal': codigoPostal,
+        'precio': amountEuros,
+        'compradorUid': currentUser?.uid,
+        'vendedorUid': post.sAutorUid,
+        'fecha': Timestamp.now(),
+        'estadoPost': 'vendido',
+        'postId': post.uid,
+      });
+
+      final pedidoId = pedidoRef.id;
+
+      await FirebaseFirestore.instance.collection('perfiles').doc(currentUser?.uid).update({
+        'pedidosComprados': FieldValue.arrayUnion([pedidoId])
+      });
+      await FirebaseFirestore.instance.collection('perfiles').doc(post.sAutorUid).update({
+        'pedidosVendidos': FieldValue.arrayUnion([pedidoId])
+      });
+
+      await FirebaseFirestore.instance.collection('Posts').doc(post.uid).update({
+        'estado': 'vendido'
+      });
+
+      setState(() {
+        post.estado = 'vendido';
+      });
+
+      paymentIntent = null;
+
+    } on StripeException catch (e) {
+      print("Stripe error: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Pago cancelado.")),
+        );
+      }
+    } catch (e) {
+      print("Error general: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("❌ Error en el proceso de pago.")),
+        );
+      }
     }
+  }
 
-    // 2. Inicializar hoja de pago
-    await Stripe.instance.initPaymentSheet(
-      paymentSheetParameters: SetupPaymentSheetParameters(
-        paymentIntentClientSecret: paymentIntent!['client_secret'],
-        merchantDisplayName: 'VinylHub',
-        style: ThemeMode.light,
-      ),
-    );
 
-    // 3. Mostrar la hoja de pago
-    await Stripe.instance.presentPaymentSheet();
 
-    // 4. Mostrar confirmación
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("✅ Pago completado con éxito.")),
-    );
+  void mostrarFormularioDireccion(BuildContext context, FbPost post, int precio) {
+    final TextEditingController direccionCtrl = TextEditingController();
+    final TextEditingController ciudadCtrl = TextEditingController();
+    final TextEditingController provinciaCtrl = TextEditingController();
+    final TextEditingController codigoPostalCtrl = TextEditingController();
 
-    // 5. Limpieza opcional
-    paymentIntent = null;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Introduce tu dirección'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(controller: direccionCtrl, decoration: InputDecoration(labelText: 'Dirección')),
+                TextField(controller: ciudadCtrl, decoration: InputDecoration(labelText: 'Ciudad')),
+                TextField(controller: provinciaCtrl, decoration: InputDecoration(labelText: 'Provincia')),
+                TextField(controller: codigoPostalCtrl, decoration: InputDecoration(labelText: 'Código Postal')),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context); // Cerramos el diálogo
 
-  } on StripeException catch (e) {
-    print("Stripe error: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("❌ Pago cancelado.")),
-    );
-  } catch (e) {
-    print("Error general: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("❌ Error en el proceso de pago.")),
+                // Iniciar pago y pasar datos de dirección
+                await pagar(
+                  context: context,
+                  post: post,
+                  amountEuros: precio,
+                  direccion: direccionCtrl.text,
+                  ciudad: ciudadCtrl.text,
+                  provincia: provinciaCtrl.text,
+                  codigoPostal: codigoPostalCtrl.text,
+                );
+              },
+              child: Text('Continuar al pago'),
+            )
+          ],
+        );
+      },
     );
   }
-}
-
-
 
 
 
@@ -607,22 +682,30 @@ class _PostDetailsState extends State<PostDetails> {
             ],
             // Botón de comprar
             SizedBox(height: 24),
-            Container(
+            post.estado == 'vendido'
+                ? Container(
               width: double.infinity,
-              child: OutlinedButton.icon(
-                icon: Icon(Icons.payment),
-                label: Text("Comprar por ${post.precio} €"),
-                onPressed: () => pagar(post.precio),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  side: BorderSide(color: Colors.black),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                  textStyle: TextStyle(fontSize: 16),
-                ),
+              padding: EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(child: Text("Este artículo ya está vendido", style: TextStyle(color: Colors.black))),
+            )
+                : OutlinedButton.icon(
+              icon: Icon(Icons.payment),
+              label: Text("Comprar por ${post.precio} €"),
+              onPressed: () => mostrarFormularioDireccion(context, post, post.precio),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.black,
+                side: BorderSide(color: Colors.black),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: EdgeInsets.symmetric(vertical: 14),
+                textStyle: TextStyle(fontSize: 16),
               ),
             ),
             SizedBox(height: 30),
+
 
           ],
         ),

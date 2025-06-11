@@ -47,7 +47,7 @@ class _HomeViewState extends State<HomeView> {
   bool blListaPostsVisible = true;
   String? _categoriaSeleccionada;
   String? _ordenSeleccionado;
-  RangeValues _rangoPrecio = RangeValues(0, 500);
+  RangeValues _rangoPrecio = RangeValues(0, 1000);
 
 
 
@@ -144,18 +144,19 @@ class _HomeViewState extends State<HomeView> {
       return;
     }
 
-    // Crear el post con las URLs de las imágenes subidas (ya almacenadas en _imagenURLs)
     FbPost nuevaPost = FbPost(
       titulo: titulo,
       descripcion: descripcion,
       artista: artista,
       anio: anio,
       precio: precio,
-      imagenURLpost: _imagenURLs,  // Utilizar las URLs de las imágenes
+      imagenURLpost: _imagenURLs,
       categoria: _categoriasSeleccionadas,
       uid: uid,
       sAutorUid: FirebaseAuth.instance.currentUser!.uid,
+      estado: 'disponible', // <- aquí lo fijas como disponible
     );
+
 
     // Agregar el post a Firestore
     await _firestore.collection('Posts').add(nuevaPost.toMap());
@@ -260,7 +261,7 @@ class _HomeViewState extends State<HomeView> {
                 setState(() {
                   _categoriaSeleccionada = null;
                   _ordenSeleccionado = null;
-                  _rangoPrecio = RangeValues(0, 500);
+                  _rangoPrecio = RangeValues(0, 1000);
                 });
               },
             ),

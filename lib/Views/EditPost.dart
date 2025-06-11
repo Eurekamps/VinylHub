@@ -72,7 +72,9 @@ class _EditPostState extends State<EditPost> {
         categoria: _categoriasSeleccionadas,
         uid: widget.post.uid,
         sAutorUid: widget.post.sAutorUid,
+        estado: widget.post.estado, //el estado se mantiene al no haber sido vendido
       );
+
 
       await FirebaseFirestore.instance
           .collection('Posts')

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../FbObjects/FbPost.dart';
-import '../Singletone/AppNavegacionUtiles.dart';
+import '../Singletone/AppNavigationUtils.dart';
 import '../Singletone/DataHolder.dart'; // Para decodificar base64
 
 class FavoritosView extends StatefulWidget {
