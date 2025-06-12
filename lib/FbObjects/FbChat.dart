@@ -1,13 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class FbChat{
-  String uid;
+class FbChat {
+  String uid; // ID del chat
   String sTitulo;
-  String sAutorUid;
+  String sAutorUid; // UID del autor del post
   String sImagenURL;
   Timestamp tmCreacion;
   String uidPost;
-  String sPostAutorUid;  // Agregado
+  String sPostAutorUid;
+  String uidComprador; // NUEVO CAMPO
 
   FbChat({
     required this.uid,
@@ -16,33 +17,33 @@ class FbChat{
     required this.sImagenURL,
     required this.tmCreacion,
     required this.uidPost,
-    required this.sPostAutorUid,  // Agregado
+    required this.sPostAutorUid,
+    required this.uidComprador, // NUEVO
   });
 
-  factory FbChat.fromFirestore(
-      DocumentSnapshot<Map<String, dynamic>> snapshot,
-      SnapshotOptions? options,) {
-    final data = snapshot.data();
+  factory FbChat.fromFirestore(DocumentSnapshot<Map<String, dynamic>> snapshot, SnapshotOptions? options) {
+    final data = snapshot.data()!;
     return FbChat(
-      sTitulo: data?['sTitulo'] != null ? data!['sTitulo'] : "",
-      sAutorUid: data?['sAutorUid'] != null ? data!['sAutorUid'] : "",
-      sImagenURL: data?['sImagenURL'] != null ? data!['sImagenURL'] : "",
-      tmCreacion: data?['tmCreacion'] != null ? data!['tmCreacion'] : Timestamp.now(),
       uid: snapshot.id,
-      uidPost: data?['uidPost'] ?? '',
-      sPostAutorUid: data?['sPostAutorUid'] ?? '',
+      sTitulo: data['sTitulo'] ?? '',
+      sAutorUid: data['sAutorUid'] ?? '',
+      sImagenURL: data['sImagenURL'] ?? '',
+      tmCreacion: data['tmCreacion'] ?? Timestamp.now(),
+      uidPost: data['uidPost'] ?? '',
+      sPostAutorUid: data['sPostAutorUid'] ?? '',
+      uidComprador: data['uidComprador'] ?? '',
     );
   }
 
   Map<String, dynamic> toFirestore() {
     return {
-      "sTitulo": sTitulo,
-      "sImagenURL": sImagenURL,
-      "sAutorUid": sAutorUid,
-      "tmCreacion": tmCreacion,
-      "uid": uid,
-      "uidPost": uidPost,
-      "sPostAutorUid": sPostAutorUid,  // Agregado
+      'sTitulo': sTitulo,
+      'sAutorUid': sAutorUid,
+      'sImagenURL': sImagenURL,
+      'tmCreacion': tmCreacion,
+      'uidPost': uidPost,
+      'sPostAutorUid': sPostAutorUid,
+      'uidComprador': uidComprador, // NUEVO
     };
   }
 }

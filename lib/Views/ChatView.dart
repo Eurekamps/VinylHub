@@ -9,6 +9,7 @@ import 'package:vinylhub/Singletone/AppNavigationUtils.dart';
 import '../FbObjects/FbMensaje.dart';
 import '../FbObjects/FbPerfil.dart';
 import '../FbObjects/FbPost.dart';
+import '../Services/NotificationService.dart';
 import '../Singletone/DataHolder.dart';
 
 class ChatView extends StatefulWidget{
@@ -107,10 +108,7 @@ class _ChatViewState extends State<ChatView> {
 
   void presionarEnvio() async {
     FbPerfil? perfil = DataHolder().miPerfil;
-    if (perfil == null) {
-      print("Error: El perfil no está disponible.");
-      return;
-    }
+    if (perfil == null) return;
 
     if (DataHolder().fbChatSelected == null) {
       await AppNavigationUtils.crearNuevoChat();
@@ -118,29 +116,58 @@ class _ChatViewState extends State<ChatView> {
 
     final firestore = FirebaseFirestore.instance;
     FbChat chat = DataHolder().fbChatSelected!;
-
-    // Si el chat todavía no está en Firestore, lo insertamos ahora
     final docSnapshot = await firestore.collection("Chats").doc(chat.uid).get();
+
+    // Crear el chat si no existe
     if (!docSnapshot.exists) {
+      String currentUid = FirebaseAuth.instance.currentUser!.uid;
+      chat.uidComprador = currentUid != chat.sPostAutorUid ? currentUid : "desconocido";
       await firestore.collection("Chats").doc(chat.uid).set(chat.toFirestore());
     }
 
-    String sRutaChatMensajes = "/Chats/${chat.uid}/mensajes";
+    String currentUid = FirebaseAuth.instance.currentUser!.uid;
+    String receptorUid = currentUid == chat.sPostAutorUid
+        ? chat.uidComprador
+        : chat.sPostAutorUid;
 
     FbMensaje nuevoMensaje = FbMensaje(
       sCuerpo: controller.text,
       tmCreacion: Timestamp.now(),
       sImgUrl: imgcontroller.text,
-      sAutorUid: FirebaseAuth.instance.currentUser!.uid,
+      sAutorUid: currentUid,
       sAutorNombre: perfil.nombre,
+      sReceptorUid: receptorUid,
     );
 
-    await firestore.collection(sRutaChatMensajes).add(nuevoMensaje.toFirestore());
+    await firestore
+        .collection("Chats/${chat.uid}/mensajes")
+        .add(nuevoMensaje.toFirestore());
 
     controller.clear();
+
+    // 🔔 Enviar notificación push al receptor
+    try {
+      final receptorSnap = await firestore.collection('perfiles').doc(receptorUid).get();
+      final fcmToken = receptorSnap.data()?['fcmToken'];
+
+      if (fcmToken != null && fcmToken.isNotEmpty) {
+        await NotificationService.sendPushNotification(
+          token: fcmToken,
+          title: 'Nuevo mensaje de ${perfil.nombre}',
+          body: nuevoMensaje.sCuerpo,
+          data: {
+            'chatId': chat.uid,
+            'autorNombre': perfil.nombre,
+            'mensaje': nuevoMensaje.sCuerpo,
+          },
+        );
+      } else {
+        print('⚠️ El usuario receptor no tiene token FCM registrado.');
+      }
+    } catch (e) {
+      print('🚨 Error al enviar notificación push: $e');
+    }
   }
-
-
 
 
 

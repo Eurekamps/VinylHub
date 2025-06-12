@@ -1,40 +1,62 @@
-const admin = require("firebase-admin");
-const functions = require('firebase-functions');
-const Stripe = require('stripe');
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
+const { getMessaging } = require("firebase-admin/messaging");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 
-const stripeSecret = functions.config().stripe.secret;
-const stripe = Stripe(stripeSecret);
-admin.initializeApp();
+initializeApp();
+const db = getFirestore();
+const messaging = getMessaging();
 
-exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
-  console.log("Datos recibidos en createPaymentIntent:", data);
-  console.log("Tipo de amount:", typeof data.amount);
+exports.notificarNuevoMensaje = onDocumentCreated(
+  "Chats/{chatId}/mensajes/{mensajeId}",
+  async (event) => {
+    const mensaje = event.data?.data();
+    const chatId = event.params?.chatId;
 
-  const amount = Number(data.amount);
-  console.log("Amount convertido a Number:", amount);
+    if (!mensaje) {
+      console.error("Mensaje vacío o no definido");
+      return;
+    }
 
-  if (!amount || typeof amount !== 'number' || amount <= 0 || isNaN(amount)) {
-    console.error("Parámetro 'amount' inválido o ausente:", data.amount);
-    throw new functions.https.HttpsError(
-      "invalid-argument",
-      "El parámetro 'amount' es requerido y debe ser un número positivo."
-    );
+    const receptorUid = mensaje.sReceptorUid;
+    const autorUid = mensaje.sAutorUid;
+
+    if (!receptorUid || receptorUid === autorUid) {
+      console.log("El receptor es el autor o no hay receptor definido");
+      return;
+    }
+
+    try {
+      const perfilSnap = await db.collection("perfiles").doc(receptorUid).get();
+
+      if (!perfilSnap.exists) {
+        console.error("No existe perfil del receptor con UID:", receptorUid);
+        return;
+      }
+
+      const token = perfilSnap.data()?.fcmToken;
+
+      if (!token || typeof token !== "string" || token.trim() === "") {
+        console.error("Token FCM inválido para el receptor:", token);
+        return;
+      }
+
+      const payload = {
+        notification: {
+          title: "Nuevo mensaje",
+          body: mensaje.sCuerpo || "",
+        },
+        data: {
+          tipo: "chat",
+          chatId: chatId,
+        },
+      };
+
+      const response = await messaging.sendToDevice(token, payload);
+      console.log("Notificación enviada:", response);
+
+    } catch (error) {
+      console.error("Error al enviar la notificación:", error);
+    }
   }
-
-  try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
-      currency: "eur",
-      automatic_payment_methods: { enabled: true },
-    });
-
-    console.log("PaymentIntent creado correctamente, id:", paymentIntent.id);
-
-    return {
-      clientSecret: paymentIntent.client_secret,
-    };
-  } catch (e) {
-    console.error("Error creando PaymentIntent:", e);
-    throw new functions.https.HttpsError("internal", e.message);
-  }
-});
+);

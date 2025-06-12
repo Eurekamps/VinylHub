@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,10 +11,6 @@ import 'package:vinylhub/FbObjects/FbChat.dart';
 import 'package:vinylhub/Views/FavoritosView.dart';
 import 'package:vinylhub/Views/TuPerfil.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:convert'; // Para convertir la imagen a base64
-import 'dart:typed_data'; // Para trabajar con bytes de la imagen
-import 'package:image/image.dart' as img;
-import '../FbObjects/FbPerfil.dart';
 import '../FbObjects/FbPost.dart';
 import '../Services/DiscogsService.dart';
 import '../Singletone/DataHolder.dart';
@@ -49,13 +46,49 @@ class _HomeViewState extends State<HomeView> {
   String? _ordenSeleccionado;
   RangeValues _rangoPrecio = RangeValues(0, 1000);
 
-
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
 
   @override
   void initState() {
     super.initState();
     _loadData(); // Carga los datos cuando se inicializa el estado
+    _setupFCM(); // Configura FCM
   }
+
+  void _setupFCM() async {
+    // Pedir permisos (importante en iOS y Android 13+)
+    await _firebaseMessaging.requestPermission();
+
+    // Obtener y guardar el token en Firestore
+    String? token = await _firebaseMessaging.getToken();
+    print("🔑 Token FCM: $token");
+
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null && token != null) {
+      await FirebaseFirestore.instance.collection('perfiles').doc(uid).update({
+        'fcmToken': token,
+      });
+    }
+
+    // Escuchar notificaciones cuando la app está en foreground
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      if (notification != null) {
+        print('🔔 Notificación en foreground: ${notification.title} - ${notification.body}');
+        // Aquí puedes mostrar un diálogo, snackbar o actualizar UI si quieres
+      }
+    });
+
+    // Cuando el usuario abre la app tocando una notificación
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print("🔔 Notificación abierta: ${message.data}");
+      // Aquí puedes navegar a la pantalla que quieras, por ejemplo:
+      // Navigator.pushNamed(context, '/chat', arguments: message.data['chatId']);
+    });
+  }
+
+
+
 
   void _loadData() async {
     List<FbChat> arTemp = await DataHolder().descargarTodosChats();

@@ -1,12 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:vinylhub/AdminClasses/FirebaseAdmin.dart';
 
-class FbMensaje{
-
+class FbMensaje {
   String sCuerpo;
   String sAutorUid;
+  String sReceptorUid; // NUEVO
   String sImgUrl;
   Timestamp tmCreacion;
   String sAutorNombre;
@@ -14,21 +11,21 @@ class FbMensaje{
   FbMensaje({
     required this.sCuerpo,
     required this.sAutorUid,
+    required this.sReceptorUid, // NUEVO
     required this.sImgUrl,
     required this.tmCreacion,
-    required this.sAutorNombre
+    required this.sAutorNombre,
   });
 
-  factory FbMensaje.fromFirestore(
-      DocumentSnapshot<Map<String, dynamic>> snapshot,
-      SnapshotOptions? options,) {
-    final data = snapshot.data();
+  factory FbMensaje.fromFirestore(DocumentSnapshot<Map<String, dynamic>> snapshot, SnapshotOptions? options) {
+    final data = snapshot.data()!;
     return FbMensaje(
-      sCuerpo: data?['sCuerpo']!= null ? data!['sCuerpo']:"",
-      sImgUrl: data?['sImgUrl']!= null ? data!['sImgUrl']:"",
-      sAutorUid: data?['sAutorUid'] ?? "",
-      tmCreacion:data?['tmCreacion']!= null ? data!['tmCreacion']:Timestamp.now(),
-      sAutorNombre: data?['sAutorNombre']!= null ? data!['sAutorNombre']:""
+      sCuerpo: data['sCuerpo'] ?? '',
+      sImgUrl: data['sImgUrl'] ?? '',
+      sAutorUid: data['sAutorUid'] ?? '',
+      sReceptorUid: data['sReceptorUid'] ?? '', // NUEVO
+      tmCreacion: data['tmCreacion'] ?? Timestamp.now(),
+      sAutorNombre: data['sAutorNombre'] ?? '',
     );
   }
 
@@ -36,10 +33,10 @@ class FbMensaje{
     return {
       "sCuerpo": sCuerpo,
       "sImgUrl": sImgUrl,
-      "sAutorUid":sAutorUid,
-      "tmCreacion":tmCreacion,
-      "sAutorNombre":sAutorNombre
-
+      "sAutorUid": sAutorUid,
+      "sReceptorUid": sReceptorUid, // NUEVO
+      "tmCreacion": tmCreacion,
+      "sAutorNombre": sAutorNombre,
     };
   }
 }

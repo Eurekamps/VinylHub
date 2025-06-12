@@ -274,48 +274,6 @@ class _PostDetailsState extends State<PostDetails> {
     }
   }
 
-  Future<FbChat> crearNuevoChat() async {
-    String uidPost = DataHolder().fbPostSelected!.uid;
-    String sPostAutorUid = DataHolder().fbPostSelected!.sAutorUid;
-    String sAutorUid = FirebaseAuth.instance.currentUser!.uid;
-
-    var chatQuery = await _firestore
-        .collection('Chats')
-        .where('uidPost', isEqualTo: uidPost)
-        .where('sPostAutorUid', isEqualTo: sPostAutorUid)
-        .where('sAutorUid', isEqualTo: sAutorUid)
-        .limit(1)
-        .get();
-
-    if (chatQuery.docs.isNotEmpty) {
-      var chatDoc = chatQuery.docs.first;
-      FbChat chatExistente = FbChat.fromFirestore(chatDoc, null);
-      DataHolder().fbChatSelected = chatExistente;
-      return chatExistente;
-    } else {
-      String uid = FirebaseFirestore.instance.collection('Chats').doc().id;
-      String titulo = DataHolder().fbPostSelected!.titulo;
-      String imagenChat = DataHolder().fbPostSelected!.imagenURLpost[0];
-
-      FbChat nuevoChat = FbChat(
-        uid: uid,
-        sTitulo: titulo,
-        sImagenURL: imagenChat,
-        sAutorUid: sAutorUid,
-        tmCreacion: Timestamp.now(),
-        uidPost: uidPost,
-        sPostAutorUid: sPostAutorUid,
-      );
-
-      await _firestore.collection('Chats').doc(uid).set(nuevoChat.toFirestore());
-
-      DataHolder().fbChatSelected = nuevoChat;
-      return nuevoChat;
-    }
-  }
-
-
-
   Future<void> _checkIfFavorito() async {
     // Identificar el ID del post y el usuario
     String uidPostFavorito = DataHolder().fbPostSelected!.uid;
