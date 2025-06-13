@@ -5,6 +5,7 @@ import 'package:vinylhub/Views/BusquedaImagen.dart';
 import 'package:vinylhub/Views/BusquedaView.dart';
 import 'package:vinylhub/Views/ChatView.dart';
 import 'package:vinylhub/Views/EditPost.dart';
+import 'package:vinylhub/Views/EnviosView.dart';
 import 'package:vinylhub/Views/FavoritosView.dart';
 import 'package:vinylhub/Views/PerfilAjenoView.dart';
 import 'package:vinylhub/Views/PostDetails.dart';
@@ -46,27 +47,28 @@ class MyApp extends StatelessWidget{
       '/postdetailsajeno': (context) => PostDetails(onClose: () {  },),
       '/ajustesview': (context) => const AjustesView(),
       '/busquedaimagen': (context) => BusquedaImagen(),
-      '/ubicacion': (context) => UbicacionView()
+      '/ubicacion': (context) => UbicacionView(),
+      '/enviosview': (context) => EnviosView()
 
 
     };
 
     MaterialApp app = MaterialApp(
-        title: "VinylHub",
-        routes: rutas,
-        initialRoute: '/splashview',
-        debugShowCheckedModeBanner: true,
-        themeMode: themeProvider.themeMode,
-        theme: ThemeData.light(),
-        darkTheme: ThemeData.dark(),
-        onGenerateRoute: (settings) {
-          if (settings.name == '/perfilajeno') {
-            final uidAjeno = settings.arguments as String;
-            return MaterialPageRoute(
-              builder: (context) => PerfilAjenoView(uidAjeno: uidAjeno),
-            );
-          }
-        },
+      title: "VinylHub",
+      routes: rutas,
+      initialRoute: '/splashview',
+      debugShowCheckedModeBanner: true,
+      themeMode: themeProvider.themeMode,
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      onGenerateRoute: (settings) {
+        if (settings.name == '/perfilajeno') {
+          final uidAjeno = settings.arguments as String;
+          return MaterialPageRoute(
+            builder: (context) => PerfilAjenoView(uidAjeno: uidAjeno),
+          );
+        }
+      },
     );
 
 

@@ -116,7 +116,7 @@ class _PostDetailsState extends State<PostDetails> {
         );
       }
 
-      // Crear pedido SOLO después del pago
+      // Crear pedido
       final pedidoRef = await FirebaseFirestore.instance.collection('pedidos').add({
         'direccion': direccion,
         'ciudad': ciudad,
@@ -132,14 +132,34 @@ class _PostDetailsState extends State<PostDetails> {
 
       final pedidoId = pedidoRef.id;
 
+      // Guardar pedido en perfiles
       await FirebaseFirestore.instance.collection('perfiles').doc(currentUser?.uid).update({
         'pedidosComprados': FieldValue.arrayUnion([pedidoId])
       });
+
       await FirebaseFirestore.instance.collection('perfiles').doc(post.sAutorUid).update({
         'pedidosVendidos': FieldValue.arrayUnion([pedidoId])
       });
 
-      // Después de crear el pedido y actualizar los pedidos del perfil y estado:
+      // Guardar en subcolección del perfil del vendedor
+      await FirebaseFirestore.instance
+          .collection('perfiles')
+          .doc(post.sAutorUid)
+          .collection('enviosPendientes')
+          .doc(pedidoId)
+          .set({
+        'pedidoId': pedidoId,
+        'direccion': direccion,
+        'ciudad': ciudad,
+        'provincia': provincia,
+        'codigoPostal': codigoPostal,
+        'compradorUid': currentUser?.uid,
+        'postId': post.uid,
+        'precio': amountEuros,
+        'fecha': Timestamp.now(),
+      });
+
+      // Marcar post como vendido
       await FirebaseFirestore.instance.collection('Posts').doc(post.uid).update({
         'estado': 'vendido',
         'compradorUid': currentUser?.uid
@@ -147,9 +167,8 @@ class _PostDetailsState extends State<PostDetails> {
 
       setState(() {
         post.estado = 'vendido';
-        post.compradorUid = currentUser?.uid;  // si tienes este campo en tu modelo FbPost
+        post.compradorUid = currentUser?.uid;
       });
-
 
       paymentIntent = null;
 
@@ -169,6 +188,7 @@ class _PostDetailsState extends State<PostDetails> {
       }
     }
   }
+
 
 
 

@@ -3,14 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vinylhub/AdminClasses/FirebaseAdmin.dart';
 import '../FbObjects/FbPerfil.dart';
-import '../Singletone/DataHolder.dart';  // Asegúrate de tener este archivo con tu modelo FbPerfil.
+import '../Singletone/DataHolder.dart';
 
 class MiDrawer1 extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<FbPerfil>(
-      future: FirebaseAdmin().getUserProfile(),  // Cargar los datos del perfil
+      future: FirebaseAdmin().getUserProfile(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
@@ -22,7 +21,7 @@ class MiDrawer1 extends StatelessWidget {
 
         return Drawer(
           child: Container(
-            width: MediaQuery.of(context).size.width * 0.5, //50% del ancho de la pantalla
+            width: MediaQuery.of(context).size.width * 0.5,
             margin: EdgeInsets.only(top: 50),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -36,13 +35,12 @@ class MiDrawer1 extends StatelessWidget {
                   blurRadius: 10,
                   offset: Offset(2, 4),
                 ),
-              ], // Sombra sutil
+              ],
             ),
-            padding: const EdgeInsets.all(20), // Aumenta el padding para mejor diseño
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Perfil en la parte superior del Drawer
                 GestureDetector(
                   onTap: () {
                     Navigator.of(context).pushNamed('/editprofileview');
@@ -50,7 +48,7 @@ class MiDrawer1 extends StatelessWidget {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        radius: 35, // Aumentado un poco
+                        radius: 35,
                         backgroundImage: perfil.imagenURL.isNotEmpty
                             ? NetworkImage(perfil.imagenURL)
                             : AssetImage('assets/default-avatar.png') as ImageProvider,
@@ -64,14 +62,17 @@ class MiDrawer1 extends StatelessWidget {
                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
                           SizedBox(height: 4),
-                          Text(FirebaseAuth.instance.currentUser!.email.toString(), style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                          Text(
+                            FirebaseAuth.instance.currentUser!.email.toString(),
+                            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                          ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 30), // Más espacio entre perfil y opciones
-                Divider(color: Colors.grey[300]), // Línea separadora
+                const SizedBox(height: 30),
+                Divider(color: Colors.grey[300]),
                 ListTile(
                   leading: Icon(Icons.settings, color: Colors.brown[700]),
                   title: const Text("Ajustes", style: TextStyle(fontSize: 16)),
@@ -83,7 +84,14 @@ class MiDrawer1 extends StatelessWidget {
                   leading: Icon(Icons.save, color: Colors.grey),
                   title: const Text("Colección", style: TextStyle(fontSize: 16)),
                   onTap: () {
-                    //Navigator.of(context).pushNamed('/coleccionview');
+                    // Navigator.of(context).pushNamed('/coleccionview');
+                  },
+                ),
+                ListTile(
+                  leading: Icon(Icons.local_shipping_outlined, color: Colors.teal),
+                  title: const Text("Mis envíos", style: TextStyle(fontSize: 16)),
+                  onTap: () {
+                    Navigator.of(context).pushNamed('/enviosview');
                   },
                 ),
                 ListTile(
@@ -98,7 +106,6 @@ class MiDrawer1 extends StatelessWidget {
             ),
           ),
         );
-
       },
     );
   }

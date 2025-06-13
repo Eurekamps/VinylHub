@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   html: ^0.15.5  # Cambié a la versión sugerida
+  intl: ^0.18.1
 
   # Firebase packages
   firebase_core: ^3.8.0
@@ -32,6 +33,7 @@ dependencies:
   image: ^4.0.15
   cached_network_image: ^3.4.1
   shimmer: ^3.0.0
+  flutter_rating_bar: ^4.0.1
 
   geocoding: ^2.1.0
   geolocator: ^10.0.0

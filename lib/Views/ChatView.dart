@@ -344,8 +344,8 @@ class _ChatViewState extends State<ChatView> {
           // Lista de mensajes
           Expanded(
             child: ListView.builder(
-              reverse: true, // Los mensajes recientes al final
-              itemCount: arFbMensajes.length,
+                reverse: true, // Los mensajes recientes al final
+                itemCount: arFbMensajes.length,
                 itemBuilder: (context, index) {
                   final mensaje = arFbMensajes[index];
                   final esPropio = esMensajePropio(mensaje);

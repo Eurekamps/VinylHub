@@ -13,6 +13,7 @@ class FbPost {
   String estado;
   String? compradorUid;
 
+
   FbPost({
     required this.titulo,
     required this.descripcion,
