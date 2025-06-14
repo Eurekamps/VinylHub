@@ -23,6 +23,7 @@ import '../Services/RecomendationService.dart';
 import '../Singletone/DataHolder.dart';
 import 'BusquedaView.dart';
 import 'ChatView.dart';
+import 'PerfilAjenoView.dart';
 import 'StripeKeys.dart';
 
 class PostDetails extends StatefulWidget {
@@ -391,6 +392,23 @@ class _PostDetailsState extends State<PostDetails> {
     }
   }
 
+  void navegarAPerfilAjeno(BuildContext context, String uidPerfilAjeno, String uidUsuarioActual) async {
+    var perfil = await DataHolder().obtenerPerfilDeFirestore(uidUsuarioActual);
+    if (perfil != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PerfilAjenoView(uidAjeno: uidPerfilAjeno),
+        ),
+      );
+
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar tu perfil')),
+      );
+    }
+  }
+
 
 
   @override
@@ -418,6 +436,7 @@ class _PostDetailsState extends State<PostDetails> {
               arguments: post.sAutorUid,
             );
           },
+
           child: Row(
             children: [
               CircleAvatar(

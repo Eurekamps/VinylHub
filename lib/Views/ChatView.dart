@@ -147,14 +147,23 @@ class _ChatViewState extends State<ChatView> {
       final receptorSnap = await firestore.collection('perfiles').doc(receptorUid).get();
       final fcmToken = receptorSnap.data()?['fcmToken'];
 
+      final emisorUid = nuevoMensaje.sAutorUid ?? FirebaseAuth.instance.currentUser?.uid;
+      if (emisorUid == null) {
+        print('🚨 No se pudo obtener el UID del emisor');
+        return;
+      }
+
+      final emisorSnap = await firestore.collection('perfiles').doc(emisorUid).get();
+      final emisorPerfil = FbPerfil.fromFirestore(emisorSnap, null);
+
       if (fcmToken != null && fcmToken.isNotEmpty) {
         await NotificationService.sendPushNotification(
           token: fcmToken,
-          title: 'Nuevo mensaje de ${perfil.nombre}',
+          title: 'Nuevo mensaje de ${emisorPerfil.nombre}',
           body: nuevoMensaje.sCuerpo,
           data: {
             'chatId': chat.uid,
-            'autorNombre': perfil.nombre,
+            'autorNombre': emisorPerfil.nombre,
             'mensaje': nuevoMensaje.sCuerpo,
           },
         );
@@ -164,6 +173,7 @@ class _ChatViewState extends State<ChatView> {
     } catch (e) {
       print('🚨 Error al enviar notificación push: $e');
     }
+
   }
 
 

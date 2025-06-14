@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,7 +28,8 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
 
   bool _esSeguidor = false;
   bool _cargandoSeguidor = true;
-  late String miUid;
+  String? miUid;
+
 
   @override
   void initState() {
@@ -39,12 +41,9 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
       _obtenerUbicacion();
       _comprobarSiEsSeguidor();
     } else {
-      // Si es posible, redirige o muestra un error
       debugPrint("❌ miPerfil es null");
     }
   }
-
-
 
   Future<void> _cargarPerfilAjeno() async {
     DocumentSnapshot<Map<String, dynamic>> doc =
@@ -54,6 +53,7 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
 
     setState(() {});
   }
+
 
 
 
@@ -186,7 +186,10 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
   }
 
   Widget _buildPerfilAjenoDatos() {
-    final miUid = DataHolder().miPerfil!.uid;
+    // Validar que miUid no sea null antes de usarlo
+    if (miUid == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return FutureBuilder<DocumentSnapshot>(
       future: _firestore
@@ -208,16 +211,19 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
                   perfilAjeno!.imagenURL != null &&
                   perfilAjeno!.imagenURL!.isNotEmpty)
                   ? CachedNetworkImageProvider(perfilAjeno!.imagenURL!)
-                  : const AssetImage('assets/default-profile.png') as ImageProvider,
+                  : const AssetImage('assets/default-profile.png')
+              as ImageProvider,
             ),
             const SizedBox(height: 10),
             Text(
               perfilAjeno?.nombre ?? "Usuario",
-              style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(
+                  fontSize: 22, fontWeight: FontWeight.bold),
             ),
             Text(
               perfilAjeno?.apodo ?? "",
-              style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[600]),
+              style: GoogleFonts.poppins(
+                  fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 12),
             TextButton(
@@ -235,7 +241,6 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
             ),
             const SizedBox(height: 10),
 
-            // ✅ Botón elegante
             OutlinedButton(
               onPressed: () async {
                 final seguidoresRef = _firestore
@@ -269,8 +274,10 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: yaSigue ? Colors.grey : Colors.blue),
                 foregroundColor: yaSigue ? Colors.grey[700] : Colors.blue,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
               child: Text(
                 yaSigue ? 'Dejar de seguir' : 'Seguir',
@@ -280,7 +287,6 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
 
             const SizedBox(height: 10),
 
-            // ✅ Fila de Puntuación - Seguidores - Seguidos
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -288,7 +294,6 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
                 _buildSeguidoresButton("Seguidos", "seguidos"),
               ],
             ),
-
 
             const SizedBox(height: 10),
           ],
@@ -313,7 +318,7 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
 
         return GestureDetector(
           onTap: () async {
-            if (count == 0) return; // no abrir modal si no hay datos
+            if (count == 0) return;
 
             final snap = await _firestore
                 .collection('perfiles')
@@ -323,7 +328,7 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
 
             showModalBottomSheet(
               context: context,
-              shape: RoundedRectangleBorder(
+              shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               builder: (_) => ListView.builder(
@@ -343,18 +348,22 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
                       final data = perfilSnap.data!.data() as Map<String, dynamic>;
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: (data['imagenURL'] != null && data['imagenURL'].toString().isNotEmpty)
+                          backgroundImage: (data['imagenURL'] != null &&
+                              data['imagenURL'].toString().isNotEmpty)
                               ? NetworkImage(data['imagenURL'])
                               : const AssetImage('assets/default-profile.png') as ImageProvider,
                         ),
                         title: Text(data['nombre'] ?? 'Usuario'),
                         subtitle: Text(data['apodo'] ?? 'Sin apodo'),
                         onTap: () {
-                          Navigator.of(context).pop(); // cerrar modal
-                          Navigator.of(context).pushNamed(
-                            '/perfilajeno',
-                            arguments: uid, // pasar uid directamente
-                          );
+                          Navigator.of(context).pop();
+
+                          final currentUid = FirebaseAuth.instance.currentUser?.uid;
+                          if (uid == currentUid) {
+                            Navigator.of(context).pushNamed('/tuperfil');
+                          } else {
+                            Navigator.of(context).pushNamed('/perfilajeno', arguments: uid);
+                          }
                         },
                       );
                     },
@@ -379,6 +388,7 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
       },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {

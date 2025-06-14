@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../Singletone/DataHolder.dart';
+
 class SplashView extends StatefulWidget{
   const SplashView({super.key});
 
@@ -16,10 +18,31 @@ class _SplashViewState extends State<SplashView> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    loading();
+    _cargarPerfilInicial();
   }
+
+  void _cargarPerfilInicial() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      final perfil = await DataHolder().obtenerPerfilDeFirestore(currentUser.uid);
+      if (perfil != null) {
+        // Perfil cargado, puedes continuar, por ejemplo, quitar el splash o navegar:
+        setState(() {
+          // Actualizar estado si tienes algo que mostrar
+        });
+        // Ejemplo: navega a HomeView
+        Navigator.pushReplacementNamed(context, '/homeview');
+      } else {
+        // Perfil no encontrado: maneja esto (mostrar mensaje, cerrar sesión, etc)
+        print('Perfil no encontrado para uid: ${currentUser.uid}');
+      }
+    } else {
+      // Usuario no logueado: navega a login
+      Navigator.pushReplacementNamed(context, '/loginview');
+    }
+  }
+
 
   void loading() async {
     while (dbPorcentaje <= 1.0) {
