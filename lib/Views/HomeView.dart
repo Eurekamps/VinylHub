@@ -34,7 +34,7 @@ class _HomeViewState extends State<HomeView> {
   final ImagePicker _picker = ImagePicker();
 
   final DiscogsService _discogsService = DiscogsService();
-  List<dynamic> _results = []; // Lista de resultados de vinilos
+  List<dynamic> _results = []; //lista de resultados de vinilos
   bool _isSearching = false;
 
   int _selectedIndex = 0;
@@ -50,12 +50,12 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-    _loadData(); // Carga los datos cuando se inicializa el estado
-    _setupFCM(); // Configura FCM
+    _loadData(); //Carga los datos cuando se inicializa el estado
+    _setupFCM(); //Configura el FCM
   }
 
   void _setupFCM() async {
-    // Pedir permisos (importante en iOS y Android 13+)
+    //pedir permisos
     await _firebaseMessaging.requestPermission();
 
     // Obtener y guardar el token en Firestore
@@ -74,14 +74,13 @@ class _HomeViewState extends State<HomeView> {
       RemoteNotification? notification = message.notification;
       if (notification != null) {
         print('🔔 Notificación en foreground: ${notification.title} - ${notification.body}');
-        // Aquí puedes mostrar un diálogo, snackbar o actualizar UI si quieres
       }
     });
 
     // Cuando el usuario abre la app tocando una notificación
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       print("🔔 Notificación abierta: ${message.data}");
-      // Aquí puedes navegar a la pantalla que quieras, por ejemplo:
+
       // Navigator.pushNamed(context, '/chat', arguments: message.data['chatId']);
     });
   }

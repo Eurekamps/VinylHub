@@ -343,12 +343,19 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
                       final data = perfilSnap.data!.data() as Map<String, dynamic>;
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundImage: data['imagenURL'] != null
+                          backgroundImage: (data['imagenURL'] != null && data['imagenURL'].toString().isNotEmpty)
                               ? NetworkImage(data['imagenURL'])
-                              : null,
+                              : const AssetImage('assets/default-profile.png') as ImageProvider,
                         ),
                         title: Text(data['nombre'] ?? 'Usuario'),
                         subtitle: Text(data['apodo'] ?? 'Sin apodo'),
+                        onTap: () {
+                          Navigator.of(context).pop(); // cerrar modal
+                          Navigator.of(context).pushNamed(
+                            '/perfilajeno',
+                            arguments: uid, // pasar uid directamente
+                          );
+                        },
                       );
                     },
                   );
@@ -372,7 +379,6 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {

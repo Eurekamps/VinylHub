@@ -24,7 +24,7 @@ class _ChatViewState extends State<ChatView> {
   TextEditingController imgcontroller = TextEditingController();
   var db = FirebaseFirestore.instance;
   String sRutaChatMensajes="/Chats/"+DataHolder().fbChatSelected!.uid+"/mensajes";
-  bool isLoading = true; // Para saber si estamos esperando a que se cargue el perfil
+  bool isLoading = true; //para saber si estamos esperando a que se cargue el perfil
 
 
 
@@ -69,7 +69,7 @@ class _ChatViewState extends State<ChatView> {
       toFirestore: (FbMensaje mensaje, _) => mensaje.toFirestore(),
     );
 
-    // Guardamos la referencia del StreamSubscription para cancelarla después
+    //guardamos la referencia del StreamSubscription para cancelarla después
     StreamSubscription? subscription;
 
     subscription = ref.snapshots().listen((event) {
@@ -86,7 +86,7 @@ class _ChatViewState extends State<ChatView> {
 
       arTemp.sort(compararArray);
 
-      // Verifica si el widget está montado antes de llamar a setState
+      //verifica si el widget está montado antes de llamar a setState
       if (mounted) {
         setState(() {
           arFbMensajes.clear();
@@ -95,15 +95,12 @@ class _ChatViewState extends State<ChatView> {
       }
     });
 
-    // Asegúrate de cancelar el listener en dispose()
     @override
     void dispose() {
       subscription?.cancel(); // Cancela la suscripción al stream
       super.dispose();
     }
   }
-
-
 
 
   void presionarEnvio() async {
@@ -239,7 +236,7 @@ class _ChatViewState extends State<ChatView> {
         backgroundColor: Colors.grey[200],
         title: GestureDetector(
           onTap: () async {
-            // actualizar fbPostSelected antes de navegar
+            //actualizar fbPostSelected antes de navegar
             await actualizarFbPostSelected();
             await actualizarMiPerfil();
             print('Autor del post: ${DataHolder().fbPostSelected?.sAutorUid}');
@@ -427,8 +424,8 @@ class MessageBubble extends StatelessWidget {
   final String content;
   final bool isSender;
   final String? imageUrl;
-  final String? uidAutor; // UID del autor del mensaje
-  final VoidCallback? onAvatarTap; // Acción al tocar el avatar
+  final String? uidAutor; //UID del autor del mensaje
+  final VoidCallback? onAvatarTap; //Acción al tocar el avatar
 
   const MessageBubble({
     super.key,
@@ -456,7 +453,7 @@ class MessageBubble extends StatelessWidget {
       child: Row(
         mainAxisAlignment: isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
         children: [
-          if (!isSender) // Solo mostramos el avatar en mensajes del otro
+          if (!isSender) //solo muestro el avatar en mensajes del otro
             GestureDetector(
               onTap: onAvatarTap,
               child: FutureBuilder<FbPerfil?>(
