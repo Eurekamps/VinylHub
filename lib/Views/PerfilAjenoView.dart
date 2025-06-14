@@ -27,16 +27,23 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
 
   bool _esSeguidor = false;
   bool _cargandoSeguidor = true;
-  String miUid = DataHolder().miPerfil!.uid;
-
+  late String miUid;
 
   @override
   void initState() {
     super.initState();
-    _cargarPerfilAjeno();
-    _obtenerUbicacion();
-    _comprobarSiEsSeguidor();
+
+    if (DataHolder().miPerfil != null) {
+      miUid = DataHolder().miPerfil!.uid;
+      _cargarPerfilAjeno();
+      _obtenerUbicacion();
+      _comprobarSiEsSeguidor();
+    } else {
+      // Si es posible, redirige o muestra un error
+      debugPrint("❌ miPerfil es null");
+    }
   }
+
 
 
   Future<void> _cargarPerfilAjeno() async {
@@ -78,45 +85,6 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
     });
   }
 
-  Future<void> _toggleSeguir() async {
-    try {
-      final seguidorRef = _firestore
-          .collection('perfiles')
-          .doc(widget.uidAjeno)
-          .collection('seguidores')
-          .doc(miUid);
-
-      final siguiendoRef = _firestore
-          .collection('perfiles')
-          .doc(miUid)
-          .collection('siguiendo')
-          .doc(widget.uidAjeno);
-
-      if (_esSeguidor) {
-        // Dejar de seguir: borramos las referencias
-        await Future.wait([
-          seguidorRef.delete(),
-          siguiendoRef.delete(),
-        ]);
-      } else {
-        // Seguir: agregamos las referencias con timestamps para mejor seguimiento
-        final data = {
-          'fechaSeguido': FieldValue.serverTimestamp(),
-        };
-        await Future.wait([
-          seguidorRef.set(data),
-          siguiendoRef.set(data),
-        ]);
-      }
-
-      setState(() {
-        _esSeguidor = !_esSeguidor;
-      });
-    } catch (e) {
-      print('Error al cambiar estado de seguir: $e');
-      // Opcional: mostrar un SnackBar o mensaje de error para el usuario
-    }
-  }
 
 
 
@@ -233,137 +201,173 @@ class _PerfilAjenoViewState extends State<PerfilAjenoView> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(height: 15),
+            const SizedBox(height: 15),
             CircleAvatar(
               radius: 50,
               backgroundImage: (perfilAjeno != null &&
                   perfilAjeno!.imagenURL != null &&
                   perfilAjeno!.imagenURL!.isNotEmpty)
                   ? CachedNetworkImageProvider(perfilAjeno!.imagenURL!)
-                  : AssetImage('assets/default-profile.png') as ImageProvider,
+                  : const AssetImage('assets/default-profile.png') as ImageProvider,
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Text(
               perfilAjeno?.nombre ?? "Usuario",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             Text(
               perfilAjeno?.apodo ?? "",
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[600]),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pushNamed('/ubicacion');
               },
-              child: Text(
+              child: const Text(
                 "Ver ubicación",
                 style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 16,
-                    decoration: TextDecoration.underline),
+                  color: Colors.blue,
+                  fontSize: 16,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
-            SizedBox(height: 10),
-            ElevatedButton(
+            const SizedBox(height: 10),
+
+            // ✅ Botón elegante
+            OutlinedButton(
               onPressed: () async {
-                final docRef = _firestore
+                final seguidoresRef = _firestore
                     .collection('perfiles')
                     .doc(widget.uidAjeno)
                     .collection('seguidores')
                     .doc(miUid);
 
+                final seguidosRef = _firestore
+                    .collection('perfiles')
+                    .doc(miUid)
+                    .collection('seguidos')
+                    .doc(widget.uidAjeno);
+
                 if (yaSigue) {
-                  await docRef.delete();
+                  await seguidoresRef.delete();
+                  await seguidosRef.delete();
                 } else {
-                  await docRef.set({
+                  await seguidoresRef.set({
                     'uidSeguidor': miUid,
+                    'timestamp': FieldValue.serverTimestamp(),
+                  });
+                  await seguidosRef.set({
+                    'uidSeguido': widget.uidAjeno,
                     'timestamp': FieldValue.serverTimestamp(),
                   });
                 }
 
-                setState(() {}); // Para que el FutureBuilder se vuelva a ejecutar
+                setState(() {});
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: yaSigue ? Colors.grey[400] : Colors.blue,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: yaSigue ? Colors.grey : Colors.blue),
+                foregroundColor: yaSigue ? Colors.grey[700] : Colors.blue,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
-              child: Text(yaSigue ? 'Dejar de seguir' : 'Seguir'),
+              child: Text(
+                yaSigue ? 'Dejar de seguir' : 'Seguir',
+                style: GoogleFonts.poppins(fontSize: 16),
+              ),
             ),
-            SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Column(
-                  children: [
-                    Text("Puntuación",
-                        style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text("4.2/5",
-                        style: TextStyle(fontSize: 16, color: Colors.orange)),
-                  ],
-                ),
-                SizedBox(width: 30),
-                Column(
-                  children: [
-                    Text("Seguidores",
-                        style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    GestureDetector(
-                      onTap: () async {
-                        final snap = await _firestore
-                            .collection('perfiles')
-                            .doc(widget.uidAjeno)
-                            .collection('seguidores')
-                            .get();
 
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (_) => ListView.builder(
-                            itemCount: snap.docs.length,
-                            itemBuilder: (context, index) {
-                              final uidSeguidor =
-                              snap.docs[index]['uidSeguidor'];
-                              return FutureBuilder<DocumentSnapshot>(
-                                future: _firestore
-                                    .collection('perfiles')
-                                    .doc(uidSeguidor)
-                                    .get(),
-                                builder: (context, perfilSnap) {
-                                  if (!perfilSnap.hasData) {
-                                    return ListTile(
-                                        title: Text('Cargando...'));
-                                  }
-                                  final data = perfilSnap.data!.data()
-                                  as Map<String, dynamic>;
-                                  return ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundImage: data['imagenURL'] != null
-                                          ? NetworkImage(data['imagenURL'])
-                                          : null,
-                                    ),
-                                    title: Text(data['nombre'] ?? 'Usuario'),
-                                    subtitle:
-                                    Text(data['apodo'] ?? 'Sin apodo'),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        );
-                      },
-                      child: Text(
-                        "Ver",
-                        style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline),
-                      ),
-                    )
-                  ],
-                ),
+            const SizedBox(height: 10),
+
+            // ✅ Fila de Puntuación - Seguidores - Seguidos
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildSeguidoresButton("Seguidores", "seguidores"),
+                _buildSeguidoresButton("Seguidos", "seguidos"),
               ],
             ),
+
+
+            const SizedBox(height: 10),
           ],
+        );
+      },
+    );
+  }
+
+
+  Widget _buildSeguidoresButton(String title, String subcollection) {
+    return FutureBuilder<QuerySnapshot>(
+      future: _firestore
+          .collection('perfiles')
+          .doc(widget.uidAjeno)
+          .collection(subcollection)
+          .get(),
+      builder: (context, snapshot) {
+        int count = 0;
+        if (snapshot.hasData) {
+          count = snapshot.data!.docs.length;
+        }
+
+        return GestureDetector(
+          onTap: () async {
+            if (count == 0) return; // no abrir modal si no hay datos
+
+            final snap = await _firestore
+                .collection('perfiles')
+                .doc(widget.uidAjeno)
+                .collection(subcollection)
+                .get();
+
+            showModalBottomSheet(
+              context: context,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              builder: (_) => ListView.builder(
+                itemCount: snap.docs.length,
+                itemBuilder: (context, index) {
+                  final uid = snap.docs[index].data()[subcollection == 'seguidores'
+                      ? 'uidSeguidor'
+                      : 'uidSeguido'];
+
+                  return FutureBuilder<DocumentSnapshot>(
+                    future: _firestore.collection('perfiles').doc(uid).get(),
+                    builder: (context, perfilSnap) {
+                      if (!perfilSnap.hasData) {
+                        return const ListTile(title: Text('Cargando...'));
+                      }
+
+                      final data = perfilSnap.data!.data() as Map<String, dynamic>;
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundImage: data['imagenURL'] != null
+                              ? NetworkImage(data['imagenURL'])
+                              : null,
+                        ),
+                        title: Text(data['nombre'] ?? 'Usuario'),
+                        subtitle: Text(data['apodo'] ?? 'Sin apodo'),
+                      );
+                    },
+                  );
+                },
+              ),
+            );
+          },
+          child: Column(
+            children: [
+              Text(
+                '$count',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                title,
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            ],
+          ),
         );
       },
     );

@@ -49,26 +49,33 @@ class _TuPerfilState extends State<TuPerfil> {
   Future<void> _cargarPerfilesSeguidos() async {
     final uidActual = FirebaseAuth.instance.currentUser!.uid;
 
-    // Cambia 'siguiendo' y 'uidsSeguidos' según tu estructura real en Firestore
-    final docRef = _firestore.collection('siguiendo').doc(uidActual);
-    final docSnap = await docRef.get();
+    final snapshot = await _firestore
+        .collection('perfiles')
+        .doc(uidActual)
+        .collection('seguidos')
+        .get();
 
-    if (docSnap.exists) {
-      final List<dynamic>? listaUids = docSnap.data()?['uidsSeguidos'];
-      if (listaUids != null && listaUids.isNotEmpty) {
-        List<Perfil?> perfiles = [];
-        for (String uidSeguido in listaUids) {
-          final perfilDoc = await _firestore.collection('perfiles').doc(uidSeguido).get();
-          if (perfilDoc.exists) {
-            perfiles.add(Perfil.fromFirestore(perfilDoc));
-          }
+    if (snapshot.docs.isNotEmpty) {
+      List<Perfil?> perfiles = [];
+
+      for (final doc in snapshot.docs) {
+        final uidSeguido = doc.id; // El ID del doc es el uid del seguido
+        final perfilDoc = await _firestore.collection('perfiles').doc(uidSeguido).get();
+        if (perfilDoc.exists) {
+          perfiles.add(Perfil.fromFirestore(perfilDoc));
         }
-        setState(() {
-          perfilesSeguidos = perfiles;
-        });
       }
+
+      setState(() {
+        perfilesSeguidos = perfiles;
+      });
+    } else {
+      setState(() {
+        perfilesSeguidos = [];
+      });
     }
   }
+
 
   Widget _buildMapaUbicacionPerfil() {
     return Padding(
@@ -353,40 +360,62 @@ class _TuPerfilState extends State<TuPerfil> {
           currentUser?.email ?? "Email no disponible",
           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
-        SizedBox(height: 20),
+        SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Column(
-              children: [
-                Text(
-                  "Puntuación",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "4.5/5",
-                  style: TextStyle(fontSize: 16, color: Colors.orange),
-                ),
-              ],
+            GestureDetector(
+              onTap: _mostrarModalSeguidos,
+              child: Column(
+                children: [
+                  Text(
+                    '${perfilesSeguidos.length}',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Seguidos',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
             ),
-            SizedBox(width: 30),
-            Column(
-              children: [
-                Text(
-                  "Seguidores",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  "125",
-                  style: TextStyle(fontSize: 16, color: Colors.blue),
-                ),
-              ],
+            SizedBox(width: 40),
+            GestureDetector(
+              onTap: _mostrarModalSeguidores,
+              child: FutureBuilder<QuerySnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('perfiles')
+                    .doc(DataHolder().miPerfil!.uid)
+                    .collection('seguidores')
+                    .get(),
+                builder: (context, snapshot) {
+                  int count = 0;
+                  if (snapshot.hasData) {
+                    count = snapshot.data!.docs.length;
+                  }
+                  return Column(
+                    children: [
+                      Text(
+                        '$count',
+                        style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Seguidores',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ],
         ),
+        SizedBox(height: 12),
       ],
     );
   }
+
 
   Widget _buildPerfilesSeguidos() {
     if (perfilesSeguidos.isEmpty) {
@@ -432,13 +461,168 @@ class _TuPerfilState extends State<TuPerfil> {
     );
   }
 
+  Widget _buildSeguidores() {
+    return FutureBuilder<QuerySnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('perfiles')
+          .doc(DataHolder().miPerfil!.uid)
+          .collection('seguidores')
+          .get(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Aún no tienes seguidores.',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          );
+        }
+
+        final seguidorUids = snapshot.data!.docs.map((doc) => doc['uidSeguidor'] as String).toList();
+
+        return SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: seguidorUids.length,
+            itemBuilder: (context, index) {
+              final uid = seguidorUids[index];
+              return FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance.collection('perfiles').doc(uid).get(),
+                builder: (context, perfilSnap) {
+                  if (!perfilSnap.hasData || !perfilSnap.data!.exists) {
+                    return SizedBox();
+                  }
+
+                  final data = perfilSnap.data!.data() as Map<String, dynamic>;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 35,
+                          backgroundImage: data['imagenURL'] != null && data['imagenURL'].toString().isNotEmpty
+                              ? NetworkImage(data['imagenURL'])
+                              : AssetImage('assets/default-profile.png') as ImageProvider,
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          data['nombre'] ?? 'Usuario',
+                          style: TextStyle(fontSize: 14),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _mostrarModalSeguidos() {
+    if (perfilesSeguidos.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => ListView.builder(
+        itemCount: perfilesSeguidos.length,
+        itemBuilder: (context, index) {
+          final perfil = perfilesSeguidos[index];
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundImage: perfil!.imagenURL != null && perfil.imagenURL!.isNotEmpty
+                  ? NetworkImage(perfil.imagenURL!)
+                  : AssetImage('assets/default-profile.png') as ImageProvider,
+            ),
+            title: Text(perfil.nombre ?? 'Usuario'),
+          );
+        },
+      ),
+    );
+  }
+
+  void _mostrarModalSeguidores() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('perfiles')
+        .doc(DataHolder().miPerfil!.uid)
+        .collection('seguidores')
+        .get();
+
+    if (snap.docs.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => ListView.builder(
+        itemCount: snap.docs.length,
+        itemBuilder: (context, index) {
+          final uidSeguidor = snap.docs[index]['uidSeguidor'];
+          return FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance.collection('perfiles').doc(uidSeguidor).get(),
+            builder: (context, perfilSnap) {
+              if (!perfilSnap.hasData || !perfilSnap.data!.exists) {
+                return ListTile(title: Text('Cargando...'));
+              }
+              final data = perfilSnap.data!.data() as Map<String, dynamic>;
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: data['imagenURL'] != null
+                      ? NetworkImage(data['imagenURL'])
+                      : null,
+                ),
+                title: Text(data['nombre'] ?? 'Usuario'),
+                subtitle: Text(data['apodo'] ?? 'Sin apodo'),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+
+  void _verTodosLosSeguidos() {
+    if (perfilesSeguidos.isEmpty) return;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => ListView.builder(
+        itemCount: perfilesSeguidos.length,
+        itemBuilder: (context, index) {
+          final perfil = perfilesSeguidos[index];
+          return ListTile(
+            leading: CircleAvatar(
+              backgroundImage: perfil!.imagenURL != null && perfil.imagenURL!.isNotEmpty
+                  ? NetworkImage(perfil.imagenURL!)
+                  : AssetImage('assets/default-profile.png') as ImageProvider,
+            ),
+            title: Text(perfil.nombre ?? 'Usuario'),
+          );
+        },
+      ),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Mi Perfil'),
+          automaticallyImplyLeading: false,
           bottom: TabBar(
             tabs: [
               Tab(text: 'Mis publicaciones'),
@@ -447,15 +631,17 @@ class _TuPerfilState extends State<TuPerfil> {
           ),
         ),
         body: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildPerfilDatos(),
-            _buildPerfilesSeguidos(),
+
             _buildMapaUbicacionPerfil(),
+
             Expanded(
               child: TabBarView(
                 children: [
                   _buildPostPropiosScreen(),
-                  _buildPostCompradosScreen(), // NUEVO
+                  _buildPostCompradosScreen(),
                 ],
               ),
             ),
@@ -464,5 +650,6 @@ class _TuPerfilState extends State<TuPerfil> {
       ),
     );
   }
+
 
 }

@@ -81,13 +81,6 @@ class MiDrawer1 extends StatelessWidget {
                   },
                 ),
                 ListTile(
-                  leading: Icon(Icons.save, color: Colors.grey),
-                  title: const Text("Colección", style: TextStyle(fontSize: 16)),
-                  onTap: () {
-                    // Navigator.of(context).pushNamed('/coleccionview');
-                  },
-                ),
-                ListTile(
                   leading: Icon(Icons.local_shipping_outlined, color: Colors.teal),
                   title: const Text("Mis envíos", style: TextStyle(fontSize: 16)),
                   onTap: () {
